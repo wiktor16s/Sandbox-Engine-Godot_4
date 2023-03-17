@@ -1,3 +1,6 @@
 # Godot 4+ specific ignores
 .godot/
-.idea/.idea.Sandbox-Engine/.idea/*
+./.idea/.idea.Sandbox-Engine/.idea/.gitignore
+./.idea/.idea.Sandbox-Engine/.idea/encodings.xml
+./.idea/.idea.Sandbox-Engine/.idea/indexLayout.xml
+./.idea/.idea.Sandbox-Engine/.idea/vcs.xml
