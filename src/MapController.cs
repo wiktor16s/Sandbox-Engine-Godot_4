@@ -4,8 +4,6 @@ namespace SandboxEngine;
 
 public static class MapController
 {
-    public const float Gravity = 10f;
-
     public static int Width;
     public static int Height;
     private static Cell[] _map;
@@ -67,7 +65,7 @@ public static class MapController
 
     public static bool IsEmpty(int x, int y)
     {
-        return InBounds(x, y) && _map[ComputeIndex(x, y)].Material == EMaterial.NONE;
+        return InBounds(x, y) && _map[ComputeIndex(x, y)].Material == Materials.None.Material;
     }
 
     public static Cell GetCellAt(int x, int y)

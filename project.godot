@@ -15,11 +15,18 @@ run/main_scene="res://Renderer.tscn"
 config/features=PackedStringArray("4.0", "C#", "Mobile")
 config/icon="res://icon.svg"
 
+[debug]
+
+settings/stdout/print_fps=true
+
 [display]
 
-window/size/viewport_width=100
-window/size/viewport_height=100
-window/stretch/aspect="ignore"
+window/size/viewport_width=512
+window/size/viewport_height=512
+window/size/window_width_override=500
+window/size/window_height_override=500
+window/vsync/vsync_mode=0
+window/stretch/mode="viewport"
 
 [dotnet]
 

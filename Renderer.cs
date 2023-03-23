@@ -1,11 +1,13 @@
+using System;
 using Godot;
+using SandboxEngine.Materials.Solid.Movable;
 
 namespace SandboxEngine;
 
 public partial class Renderer : Sprite2D
 {
-    private static Image _mapImage;
-    private Texture _mapTexture;
+    public static Image _mapImage;
+    public static ImageTexture _mapTexture;
     public int Height;
     public int Width;
 
@@ -20,36 +22,36 @@ public partial class Renderer : Sprite2D
         MapController.CopyImageToMap(_mapImage);
     }
 
-    public static void DrawCell(Vector2I position, EMaterial material)
+    public static void DrawCell(Vector2I position, uint material)
     {
         MapController.GetCellAt(position.X, position.Y).SetMaterial(material);
         _mapImage.SetPixelv(position, new Color((uint)material));
     }
 
-    // //! System Overrides
-    public override void _Input(InputEvent @event)
+    //! System Overrides
+
+    public void UpdateMouseButtons()
     {
-        if (@event is InputEventMouseMotion eventMouseMotion)
-            DrawCell((Vector2I)eventMouseMotion.Position.Floor(), EMaterial.SAND);
-        // if (@event is InputEventMouseButton eventMouseButton)
-        // {
-        //     GD.Print(eventMouseMotion.Position);
-        //     if (eventMouseButton.IsPressed())
-        //     {
-        //     }
-        // }
+        if (Input.IsMouseButtonPressed(MouseButton.Left))
+        {
+            DrawCell((Vector2I)GetViewport().GetMousePosition().Floor(), Sand.Material);
+        }
     }
 
     public override void _Ready()
-    {
-        
+    { 
         LoadMapFromTexture();
     }
 
+    public override void _PhysicsProcess(double delta)
+    {
+        
+    }
     public override void _Process(double delta)
     {
-        //GD.Print(1000 / delta);
         MapController.UpdateAll();
-        Texture = ImageTexture.CreateFromImage(_mapImage);
+        _mapTexture.Update(_mapImage);
+        Texture = _mapTexture;
+        UpdateMouseButtons();
     }
 }

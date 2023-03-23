@@ -3,13 +3,13 @@ namespace SandboxEngine;
 public enum EMaterial : uint
 {
     SAND = EColors.YELLOW,
-    WALL = EColors.WHITE,
+    STONE = EColors.WHITE,
     NONE = EColors.BLACK,
     WATER = EColors.BLUE,
     UNKNOWN = EColors.RED
 }
 
-internal enum EColors : uint
+public enum EColors : uint
 {
     YELLOW = 4294902015,
     WHITE = 4294967295,
