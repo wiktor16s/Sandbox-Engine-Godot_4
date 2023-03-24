@@ -1,19 +1,27 @@
 using Godot;
+using SandboxEngine.Controllers;
 
 namespace SandboxEngine.Materials.Solid.Movable;
 
-public class Sand : Element, Interfaces.IBurning
+public class Sand : Element
 {
-    public Sand(short id, uint color, short mass) : base(id, color, mass)
+    public Sand(
+        EMaterial id,
+        Color color,
+        short density,
+        int flashPoint,
+        int freezingPoint,
+        uint caloricValue,
+        EMaterial afterFreezingTransformation,
+        EMaterial afterBurningTransformation,
+        Element.Defaults defaultValues
+    ) : base(id, color, density, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
+        afterBurningTransformation, defaultValues)
     {
+        // constructor
     }
 
-    public void Burn()
-    {
-        //burn()
-    }
-    
-    public override void Update( Element cell)
+    public override void Update(Cell cell)
     {
         var down = 0;
         var left = false;
@@ -54,6 +62,6 @@ public class Sand : Element, Interfaces.IBurning
             Renderer.DrawCell(new Vector2I(cell.Position.X + 1, cell.Position.Y + 1), Material);
         }
 
-        if (down > 0 || left || right) Renderer.DrawCell(new Vector2I(cell.Position.X, cell.Position.Y), None.Material);
+        if (down > 0 || left || right) Renderer.DrawCell(new Vector2I(cell.Position.X, cell.Position.Y), CellPool.Vacuum.Material); //todo fix! apply swapping
     }
 }

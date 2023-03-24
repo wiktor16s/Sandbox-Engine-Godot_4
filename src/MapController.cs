@@ -6,33 +6,29 @@ public static class MapController
 {
     public static int Width;
     public static int Height;
-    private static Cell[] _map;
+    private static Cell[] _cellMap;
 
     public static void Init(int width, int height)
     {
         Height = height;
         Width = width;
 
-        _map = new Cell[height * width];
+        _cellMap = new Cell[height * width];
 
-        for (var i = 0; i < _map.Length; i++)
+        for (var i = 0; i < _cellMap.Length; i++)
         {
             var position = ComputePosition(i, Width);
-            _map[i] = new Cell(position.X, position.Y);
+            _cellMap[i] = new Cell(position.X, position.Y);
         }
     }
 
     public static void CopyImageToMap(Image imageTexture)
     {
-        //GD.Print(MapController.map.Length);
-
-        for (var i = 0; i < _map.Length; i++)
+        for (var i = 0; i < _cellMap.Length; i++)
         {
             var coords = ComputePosition(i, Width);
-            //GD.Print("coords:", coords, " index: ", i);
             var color = imageTexture.GetPixel(coords.X, coords.Y);
-            //GD.Print("color:", color);
-            _map[i].SetMaterialByColor(color);
+            _cellMap[i].SetMaterial(Renderer.GetMaterialByColor(color));
         }
         // MapController.map[MapController.ComputePosition(coords.X, coords.y)];
     }
@@ -65,12 +61,12 @@ public static class MapController
 
     public static bool IsEmpty(int x, int y)
     {
-        return InBounds(x, y) && _map[ComputeIndex(x, y)].Material == Materials.None.Material;
+        return InBounds(x, y) && _cellMap[ComputeIndex(x, y)].Material == Materials.EMaterial.VACUUM;
     }
 
     public static Cell GetCellAt(int x, int y)
     {
-        return _map[ComputeIndex(x, y)];
+        return _cellMap[ComputeIndex(x, y)];
     }
 
     // public static void SetCellAt(Cell newCell, int x, int y)
@@ -102,23 +98,6 @@ public static class MapController
 
     public static void UpdateAll()
     {
-        for (var i = _map.Length - 1; i > 0; i--) _map[i].Update(0f);
+        for (var i = _cellMap.Length - 1; i > 0; i--) _cellMap[i].Update(0f);
     }
 }
-
-/*
-
-for map 4x4
-
-15 14 13 12
-11 10  9  8
- 7  6  5  4
- 3  2  1  0
-
-is exual to
-
-[ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15 ]
-
-we need to iterate from bottom to top
-
-*/

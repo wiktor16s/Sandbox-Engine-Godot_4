@@ -1,10 +1,10 @@
 [gd_scene load_steps=3 format=3 uid="uid://csxaon5r1314p"]
 
-[ext_resource type="Texture2D" uid="uid://diottfi7tnhqx" path="res://assets/texture512x512.bmp" id="1_lik2j"]
+[ext_resource type="Texture2D" uid="uid://caaanmud6jj4h" path="res://assets/texture100x100.bmp" id="1_xmoob"]
 [ext_resource type="Script" path="res://Renderer.cs" id="2_gycyu"]
 
 [node name="Renderer" type="Sprite2D"]
 texture_repeat = 1
-texture = ExtResource("1_lik2j")
+texture = ExtResource("1_xmoob")
 centered = false
 script = ExtResource("2_gycyu")

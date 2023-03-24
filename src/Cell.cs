@@ -1,76 +1,63 @@
 using Godot;
+using SandboxEngine.Controllers;
+using SandboxEngine.Materials;
 using SandboxEngine.Materials.Solid.Movable;
 
 namespace SandboxEngine;
 
-public class Cell 
+public class Cell
 {
     public bool HasBeenUpdatedThisFrame;
+    public EMaterial Material;
+    public Vector2I Position;
+    public int Temperature;
+    public Vector2I Velocity;
+    public uint Lifetime;
 
     public Cell(int x, int y)
     {
-        Position = new Vector2I(x, y);
-        Material = Materials.None.Material;
         HasBeenUpdatedThisFrame = true;
+        Material = EMaterial.VACUUM;
+        Position = new Vector2I(x, y);
+        Temperature = 0;
+        Velocity = new Vector2I(0, 0);
+        Lifetime = 0;
     }
+    
+    // public void SetMaterialByColor(Color color)
+    // {
+    //     var colorI = color.ToRgba32();
+    //     switch (colorI)
+    //     {
+    //         case Materials.Solid.Movable.Sand.
+    //             Material = Sand.Material;
+    //             break;
+    //         case None.Material:
+    //             Material = None.Material;
+    //             break;
+    //         case Stone.Material:
+    //             Material = Stone.Material;
+    //             break;
+    //         case Water.Material:
+    //             Material = Water.Material;
+    //             break;
+    //         default:
+    //             Material = Unknown.Material;
+    //             break;
+    //     }
+    // }
 
-    public uint Material { get; private set; }
-    public float Lifetime { get; private set; } // in ticks
-    public Vector2I Position { get; }
-    public Vector2 Velocity { get; set; }
-
-
-    public void SetMaterialByColor(Color color)
-    {
-        var colorI = color.ToRgba32();
-        switch (colorI)
-        {
-            case Sand.Material:
-                Material = Sand.Material;
-                break;
-            case Materials.None.Material:
-                Material = Materials.None.Material;
-                break;
-            case Materials.Stone.Material:
-                Material = Materials.Stone.Material;
-                break;
-            case Materials.Water.Material:
-                Material = Materials.Water.Material;
-                break;
-            default:
-                Material = Materials.Unknown.Material;
-                break;
-        }
-    }
-
-    public void SetMaterial(uint material) // todo change type to interface
+    public void SetMaterial(Materials.EMaterial material) // todo change type to interface
     {
         Material = material;
-    }
-
-    public Color GetMaterialColor()
-    {
-        switch (Material)
-        {
-            case Materials.None.Material:
-                return new Color(Materials.None.Color);
-            case Materials.Stone.Material:
-                return new Color(Materials.Stone.Color);
-            case Sand.Material:
-                return new Color(Sand.Color);
-            case Materials.Water.Material:
-                return new Color(Materials.Water.Color);
-            default:
-                return new Color(Materials.Unknown.Color);
-        }
     }
 
     public void Update(float tickDeltaTime)
     {
         switch (Material)
         {
-            case Sand.Material:
-                Sand.Update();
+            case Materials.EMaterial.SAND:
+                CellPool.Sand.Update(this);
                 break;
         }
     }
@@ -89,9 +76,9 @@ public class Cell
 
     private void SetDefaults()
     {
-        Material = Materials.None.Material;
-        Lifetime = 0;
-        Velocity = new Vector2I(0, 0);
+        Material = CellPool.Vacuum.Material;
+        Lifetime = CellPool.Vacuum.DefaultValues.Lifetime;
+        Velocity = CellPool.Vacuum.DefaultValues.Velocity;
         HasBeenUpdatedThisFrame = true;
     }
 }
