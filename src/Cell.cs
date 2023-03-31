@@ -1,125 +1,171 @@
 using Godot;
+using SandboxEngine.Controllers;
+using SandboxEngine.Materials;
 
 namespace SandboxEngine;
 
 public class Cell
 {
-    public bool HasBeenUpdatedThisFrame;
+    public readonly Vector2I ConstPosition;
+
+    //public bool HasBeenUpdatedThisFrame;
+    public bool LastUpdatedInTick;
+    public uint Lifetime;
+    public EMaterial Material;
+    public Vector2 PositionOffset;
+    public int Temperature;
+    public Vector2 Velocity;
 
     public Cell(int x, int y)
     {
-        Position = new Vector2I(x, y);
-        Material = EMaterial.NONE;
-        HasBeenUpdatedThisFrame = true;
+        //HasBeenUpdatedThisFrame = true;
+        Material = EMaterial.VACUUM;
+        PositionOffset = new Vector2(0, 0);
+        ConstPosition = new Vector2I(x, y);
+        Temperature = 0;
+        Lifetime = 0;
+        LastUpdatedInTick = Globals.tickOscillator;
     }
 
-    public EMaterial Material { get; private set; }
-    public float Lifetime { get; private set; } // in ticks
-    public Vector2I Position { get; }
-    public Vector2 Velocity { get; private set; }
-
-    public void SetMaterialByColor(Color color)
-    {
-        var colorI = color.ToRgba32();
-        Material = colorI switch
-        {
-            (uint)EMaterial.SAND => EMaterial.SAND,
-            (uint)EMaterial.NONE => EMaterial.NONE,
-            (uint)EMaterial.WALL => EMaterial.WALL,
-            (uint)EMaterial.WATER => EMaterial.WATER,
-            _ => EMaterial.UNKNOWN
-        };
-    }
-
-    public void SetMaterial(EMaterial material)
+    public void SetMaterial(EMaterial material) // todo change type to interface
     {
         Material = material;
     }
 
-    public Color GetMaterialColor()
+    public int checkFreeCellsForGravitation()
     {
-        return Material switch
+        var freeCellsDown = 0;
+        for (var i = 1; i < Globals.Gravitation + 1; i++)
         {
-            EMaterial.NONE => new Color((uint)EMaterial.NONE),
-            EMaterial.WALL => new Color((uint)EMaterial.WALL),
-            EMaterial.SAND => new Color((uint)EMaterial.SAND),
-            EMaterial.WATER => new Color((uint)EMaterial.WATER),
-            _ => new Color((uint)EMaterial.UNKNOWN)
-        };
+            if (MapController.InBounds(ConstPosition.X, ConstPosition.Y + i) &&
+                MaterialPool.GetByMaterial(
+                        MapController.GetCellFromMapBuffer(ConstPosition.X, ConstPosition.Y + i).Material).Defaults
+                    .Density < MaterialPool.GetByMaterial(Material).Defaults.Density
+               )
+            {
+                freeCellsDown = i;
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return freeCellsDown;
     }
+
+    public bool checkFreeCellsOnLeftDown()
+    {
+        return MapController.InBounds(ConstPosition.X - 1, ConstPosition.Y + 1) &&
+               MaterialPool.GetByMaterial(
+                   MapController.GetCellFromMapBuffer(ConstPosition.X - 1,
+                       ConstPosition.Y + 1).Material
+               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+    }
+
+    public bool checkFreeCellsOnLeft()
+    {
+        return MapController.InBounds(ConstPosition.X - 1, ConstPosition.Y) &&
+               MaterialPool.GetByMaterial(
+                   MapController.GetCellFromMapBuffer(ConstPosition.X - 1,
+                       ConstPosition.Y).Material
+               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+    }
+
+    public bool checkFreeCellsOnRightDown()
+    {
+        return MapController.InBounds(ConstPosition.X + 1, ConstPosition.Y + 1) &&
+               MaterialPool.GetByMaterial(
+                   MapController.GetCellFromMapBuffer(ConstPosition.X + 1,
+                       ConstPosition.Y + 1).Material
+               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+    }
+
+    public bool checkFreeCellsOnRigh()
+    {
+        return MapController.InBounds(ConstPosition.X + 1, ConstPosition.Y) &&
+               MaterialPool.GetByMaterial(
+                   MapController.GetCellFromMapBuffer(ConstPosition.X + 1,
+                       ConstPosition.Y).Material
+               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+    }
+
 
     public void Update(float tickDeltaTime)
     {
+        //if (HasBeenUpdatedThisFrame) return;
+        if (LastUpdatedInTick == Globals.tickOscillator) return;
         switch (Material)
         {
             case EMaterial.SAND:
-                UpdateAsSand(tickDeltaTime);
+                MaterialPool.Sand.Update(this);
+                break;
+            case EMaterial.WATER:
+                MaterialPool.Water.Update(this);
                 break;
         }
     }
 
-    private void Move(int x, int y)
+    public void Move(int x, int y)
     {
-        var newLocationCell = MapController.GetCellAt(x, y);
-        newLocationCell.Material = Material;
-        newLocationCell.Lifetime = Lifetime;
-        newLocationCell.Velocity = Velocity;
-        newLocationCell.HasBeenUpdatedThisFrame = true;
-        Reset();
+        var destinationCell = MapController.GetCellFromMapBuffer(x, y);
+        destinationCell.Material = Material;
+        destinationCell.Lifetime = Lifetime;
+        destinationCell.Velocity = Velocity;
+        //destinationCell.HasBeenUpdatedThisFrame = true;
+        destinationCell.LastUpdatedInTick = Globals.tickOscillator;
+        //When cell moved, set defaults at this Cell`s position
+        Renderer.DrawCell(new Vector2I(x, y), Material); // draw in new position
+        SetDefaults();
     }
 
-    private void Reset()
+    public void Move(Vector2I newPosition)
     {
-        Material = EMaterial.NONE;
-        Lifetime = 0;
-        Velocity = new Vector2I(0, 0);
-        HasBeenUpdatedThisFrame = true;
+        Move(newPosition.X, newPosition.Y);
     }
 
-    private void UpdateAsSand(float tickDeltaTime)
+    public void Swap(int x, int y)
     {
-        var down = 0;
-        var left = false;
-        var right = false;
-        const int gravitation = 4;
+        var destinationCell = MapController.GetCellFromMapBuffer(x, y);
+        var tempMaterial = Material;
+        var tempLifetime = Lifetime;
+        var tempVelocity = Velocity;
+        var tempTemperature = Temperature;
+        var tempPositionOffset = PositionOffset;
+        var tempLastUpdatedInTick = LastUpdatedInTick;
 
-        var gravitationVector = new Vector2(0, 1);
+        Material = destinationCell.Material;
+        Lifetime = destinationCell.Lifetime;
+        Velocity = destinationCell.Velocity;
+        Temperature = destinationCell.Temperature;
+        PositionOffset = destinationCell.PositionOffset;
+        LastUpdatedInTick = destinationCell.LastUpdatedInTick;
 
-        // if (position.Y + 1 < MapController.height)
-        // {
-        for (var i = 1; i < gravitation + 1; i++)
-            if (MapController.IsEmpty(Position.X, Position.Y + i))
-                down = i;
-            else
-                break;
-        if (Position.X - 1 >= 0) left = MapController.IsEmpty(Position.X - 1, Position.Y + 1);
-        if (Position.X + 1 < MapController.Height) right = MapController.IsEmpty(Position.X + 1, Position.Y + 1);
-        //}
+        destinationCell.Material = tempMaterial;
+        destinationCell.Lifetime = tempLifetime;
+        destinationCell.Velocity = tempVelocity;
+        destinationCell.Temperature = tempTemperature;
+        destinationCell.PositionOffset = tempPositionOffset;
+        destinationCell.LastUpdatedInTick = tempLastUpdatedInTick;
 
-        if (left && right)
-        {
-            var rand = GD.Randi() % 2 == 1;
-            left = rand;
-            right = !rand;
-        }
 
-        if (down > 0)
-        {
-            Velocity = Velocity + new Vector2I(0, 1);
-            Move(Position.X, Position.Y + down);
-            Renderer.DrawCell(new Vector2I(Position.X, Position.Y + down), EMaterial.SAND);
-        }
-        else if (left)
-        {
-            Move(Position.X - 1, Position.Y + 1);
-            Renderer.DrawCell(new Vector2I(Position.X - 1, Position.Y + 1), EMaterial.SAND);
-        }
-        else if (right)
-        {
-            Move(Position.X + 1, Position.Y + 1);
-            Renderer.DrawCell(new Vector2I(Position.X + 1, Position.Y + 1), EMaterial.SAND);
-        }
+        Renderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
+        Renderer.DrawCell(ConstPosition, Material); // draw in new position
+    }
 
-        if (down > 0 || left || right) Renderer.DrawCell(new Vector2I(Position.X, Position.Y), EMaterial.NONE);
+    public void Swap(Vector2I position)
+    {
+        Swap(position.X, position.Y);
+    }
+
+    private void SetDefaults()
+    {
+        Material = MaterialPool.Vacuum.Material;
+        Lifetime = MaterialPool.Vacuum.Defaults.Lifetime;
+        Velocity = MaterialPool.Vacuum.Defaults.Velocity;
+        //HasBeenUpdatedThisFrame = false;
+        LastUpdatedInTick = !Globals.tickOscillator;
+
+        Renderer.DrawCell(new Vector2I(ConstPosition.X, ConstPosition.Y), MaterialPool.Vacuum.Material);
     }
 }

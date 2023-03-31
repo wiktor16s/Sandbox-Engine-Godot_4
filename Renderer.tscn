@@ -1,9 +1,11 @@
 [gd_scene load_steps=3 format=3 uid="uid://csxaon5r1314p"]
 
-[ext_resource type="Texture2D" uid="uid://caaanmud6jj4h" path="res://assets/texture100x100.bmp" id="1_vjy4i"]
+[ext_resource type="Texture2D" uid="uid://c0l27jofrs1ng" path="res://assets/texture128x128.bmp" id="1_8l8hk"]
 [ext_resource type="Script" path="res://Renderer.cs" id="2_gycyu"]
 
 [node name="Renderer" type="Sprite2D"]
-texture = ExtResource("1_vjy4i")
+texture_filter = 1
+texture_repeat = 1
+texture = ExtResource("1_8l8hk")
 centered = false
 script = ExtResource("2_gycyu")

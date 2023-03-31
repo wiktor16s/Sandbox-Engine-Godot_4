@@ -4,4 +4,7 @@
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <RootNamespace>SandboxEngine</RootNamespace>
   </PropertyGroup>
+  <ItemGroup>
+    <Folder Include="src\Materials\Gas" />
+  </ItemGroup>
 </Project>
