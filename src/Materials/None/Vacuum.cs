@@ -1,24 +1,14 @@
 using Godot;
-using SandboxEngine.Controllers;
 
-namespace SandboxEngine.Materials.Solid.Movable;
+namespace SandboxEngine.Materials.None;
 
 public class Vacuum : Element
 {
-    public Vacuum(
-        EMaterial id,
-        Color color,
-        short density,
-        int flashPoint,
-        int freezingPoint,
-        uint caloricValue,
-        Element.Defaults defaultValues,
-        EMaterial afterFreezingTransformation,
-        EMaterial afterBurningTransformation
-    ) : base(id, color, density, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
-        afterBurningTransformation, defaultValues)
+    public Vacuum(EMaterial id, Color color, int flashPoint, int freezingPoint, uint caloricValue,
+        EMaterial afterFreezingTransformation, EMaterial afterBurningTransformation, DefaultValues defaults) : base(id,
+        color, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation, afterBurningTransformation,
+        defaults)
     {
-        // constructor
     }
 
     public override void Update(Cell cell)

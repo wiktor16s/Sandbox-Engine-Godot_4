@@ -2,7 +2,9 @@ namespace SandboxEngine;
 
 public static class Globals
 {
-    public const sbyte Gravitation = 1;
-    public const int NeverFreezeValue = -2147483648;
-    public const int NeverBurnValue = 2147483647;
+    public const float Gravitation = 9.81f;
+    public const int NeverFreezeValue = int.MaxValue;
+    public const int NeverBurnValue = int.MinValue;
+    public static uint UpdateTickCounter = 0;
+    public static bool tickOscillator = false;
 }

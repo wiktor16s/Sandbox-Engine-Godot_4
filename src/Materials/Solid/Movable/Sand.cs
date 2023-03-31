@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using SandboxEngine.Controllers;
 
@@ -8,14 +9,13 @@ public class Sand : Element
     public Sand(
         EMaterial id,
         Color color,
-        short density,
         int flashPoint,
         int freezingPoint,
         uint caloricValue,
         EMaterial afterFreezingTransformation,
         EMaterial afterBurningTransformation,
-        Element.Defaults defaultValues
-    ) : base(id, color, density, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
+        DefaultValues defaultValues
+    ) : base(id, color, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
         afterBurningTransformation, defaultValues)
     {
         // constructor
@@ -23,45 +23,50 @@ public class Sand : Element
 
     public override void Update(Cell cell)
     {
-        var down = 0;
-        var left = false;
-        var right = false;
-        const int gravitation = 4;
+        //cell.HasBeenUpdatedThisFrame = true;
+        cell.LastUpdatedInTick = Globals.tickOscillator;
 
-        for (var i = 1; i < gravitation + 1; i++)
-            if (MapController.IsEmpty(cell.Position.X, cell.Position.Y + i))
-                down = i;
-            else
-                break;
+        //# ADD FORCES TO VELOCITY
+        cell.Velocity.Y += Globals.Gravitation; // add gravitation acceleration to velocity
 
-        if (cell.Position.X - 1 >= 0) left = MapController.IsEmpty(cell.Position.X - 1, cell.Position.Y + 1);
-        if (cell.Position.X + 1 < MapController.Height)
-            right = MapController.IsEmpty(cell.Position.X + 1, cell.Position.Y + 1);
+        //# UPDATE POSITION OFFSET WITH VELOCITY
+        cell.PositionOffset += cell.Velocity;
 
-        if (left && right)
+        //# MOVE CELL
+        if (Math.Round(cell.PositionOffset.Y) >= 1)
+        {
+            // move y+1
+            // reset position offset
+        }
+
+        var freeCellsDown = 0;
+        var freeSpaceOnLeftDown = false;
+        var freeSpaceOnRightDown = false;
+
+
+        freeCellsDown = cell.checkFreeCellsForGravitation();
+        freeSpaceOnLeftDown = cell.checkFreeCellsOnLeftDown();
+        freeSpaceOnRightDown = cell.checkFreeCellsOnRightDown();
+
+        if (freeSpaceOnLeftDown && freeSpaceOnRightDown)
         {
             var rand = GD.Randi() % 2 == 1;
-            left = rand;
-            right = !rand;
+            freeSpaceOnLeftDown = rand;
+            freeSpaceOnRightDown = !rand;
         }
 
-        if (down > 0)
+        if (freeCellsDown > 0)
         {
             cell.Velocity += new Vector2I(0, 1);
-            cell.Move(cell.Position.X, cell.Position.Y + down);
-            Renderer.DrawCell(new Vector2I(cell.Position.X, cell.Position.Y + down), Material);
+            cell.Swap(cell.ConstPosition.X, cell.ConstPosition.Y + freeCellsDown);
         }
-        else if (left)
+        else if (freeSpaceOnLeftDown)
         {
-            cell.Move(cell.Position.X - 1, cell.Position.Y + 1);
-            Renderer.DrawCell(new Vector2I(cell.Position.X - 1, cell.Position.Y + 1), Material);
+            cell.Swap(cell.ConstPosition.X - 1, cell.ConstPosition.Y + 1);
         }
-        else if (right)
+        else if (freeSpaceOnRightDown)
         {
-            cell.Move(cell.Position.X + 1, cell.Position.Y + 1);
-            Renderer.DrawCell(new Vector2I(cell.Position.X + 1, cell.Position.Y + 1), Material);
+            cell.Swap(cell.ConstPosition.X + 1, cell.ConstPosition.Y + 1);
         }
-
-        if (down > 0 || left || right) Renderer.DrawCell(new Vector2I(cell.Position.X, cell.Position.Y), CellPool.Vacuum.Material); //todo fix! apply swapping
     }
 }

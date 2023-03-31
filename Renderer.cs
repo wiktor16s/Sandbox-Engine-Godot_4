@@ -8,7 +8,12 @@ public partial class Renderer : Sprite2D
 {
     public static Image _mapImage;
     public static ImageTexture _mapTexture;
+
+    private int A;
+    private int B;
+    private int C;
     public int Height;
+    private int SUM;
     public int Width;
 
     private void LoadMapFromTexture()
@@ -28,9 +33,11 @@ public partial class Renderer : Sprite2D
         switch (colorI)
         {
             case (uint)EColors.YELLOW:
-                return CellPool.Sand.Material;
+                return MaterialPool.Sand.Material;
+            case (uint)EColors.BLUE:
+                return MaterialPool.Water.Material;
             default:
-                return CellPool.Vacuum.Material;
+                return MaterialPool.Vacuum.Material;
         }
     }
 
@@ -44,16 +51,30 @@ public partial class Renderer : Sprite2D
                 var MoreB = GD.Randi() % 50;
 
                 var newColor = new Color(
-                    (CellPool.Sand.Color.R - LessRG) / 255,
-                    (CellPool.Sand.Color.G - LessRG) / 255,
-                    (CellPool.Sand.Color.B + MoreB) / 255
+                    (MaterialPool.Sand.Color.R - LessRG) / 255,
+                    (MaterialPool.Sand.Color.G - LessRG) / 255,
+                    (MaterialPool.Sand.Color.B + MoreB) / 255
+                );
+
+                return newColor;
+            }
+
+            case EMaterial.WATER:
+            {
+                var LessB = GD.Randi() % 50;
+                var MoreRG = GD.Randi() % 50;
+
+                var newColor = new Color(
+                    (MaterialPool.Water.Color.R + MoreRG) / 255,
+                    (MaterialPool.Water.Color.G + MoreRG) / 255,
+                    (MaterialPool.Water.Color.B - LessB) / 255
                 );
 
                 return newColor;
             }
 
             case EMaterial.VACUUM:
-                return CellPool.Vacuum.Color;
+                return MaterialPool.Vacuum.Color;
             default:
                 return new Color(255, 0, 255);
         }
@@ -62,7 +83,7 @@ public partial class Renderer : Sprite2D
 
     public static void DrawCell(Vector2I position, EMaterial material)
     {
-        MapController.GetCellAt(position.X, position.Y).SetMaterial(material);
+        MapController.GetCellFromMapBuffer(position.X, position.Y).SetMaterial(material);
         _mapImage.SetPixelv(position, GetColorByMaterial(material));
     }
 
@@ -71,7 +92,22 @@ public partial class Renderer : Sprite2D
     public void UpdateMouseButtons()
     {
         if (Input.IsMouseButtonPressed(MouseButton.Left))
-            DrawCell((Vector2I)GetViewport().GetMousePosition().Floor(), EMaterial.SAND);
+        {
+            var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
+            if (MapController.InBounds(mousePosition.X, mousePosition.Y))
+            {
+                DrawCell(mousePosition, EMaterial.SAND);
+            }
+        }
+
+        if (Input.IsMouseButtonPressed(MouseButton.Right))
+        {
+            var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
+            if (MapController.InBounds(mousePosition.X, mousePosition.Y))
+            {
+                DrawCell(mousePosition, EMaterial.WATER);
+            }
+        }
     }
 
     public override void _Ready()
@@ -85,6 +121,20 @@ public partial class Renderer : Sprite2D
 
     public override void _Process(double delta)
     {
+        //var rand = GD.Randi() % 2 == 1;
+        // if (Utils.Generator.Next(0, 2) == 0)
+        // {
+        //     A++;
+        // }
+        // else
+        // {
+        //     B++;
+        // }
+
+        //C++;
+        //SUM += A - B;
+        //GD.Print($"{SUM / C}");
+
         MapController.UpdateAll();
         _mapTexture.Update(_mapImage);
         Texture = _mapTexture;
