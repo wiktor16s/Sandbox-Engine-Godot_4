@@ -9,12 +9,7 @@ public partial class Renderer : Sprite2D
 {
     public static Image _mapImage;
     public static ImageTexture _mapTexture;
-
-    private int A;
-    private int B;
-    private int C;
     public int Height;
-    private int SUM;
     public int Width;
 
     private void LoadMapFromTexture()
