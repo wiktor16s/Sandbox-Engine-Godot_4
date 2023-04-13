@@ -1,8 +1,8 @@
 using System;
 using Godot;
-using SandboxEngine.Controllers;
+using SandboxEngine.Map;
 
-namespace SandboxEngine.Materials.Solid.Movable;
+namespace SandboxEngine.Elements.Solid.Movable;
 
 public class Sand : Element
 {
@@ -44,7 +44,7 @@ public class Sand : Element
         var freeSpaceOnRightDown = false;
 
 
-        freeCellsDown = cell.checkFreeCellsForGravitation();
+        freeCellsDown = cell.CheckFreeCellsForGravitation();
         freeSpaceOnLeftDown = cell.checkFreeCellsOnLeftDown();
         freeSpaceOnRightDown = cell.checkFreeCellsOnRightDown();
 

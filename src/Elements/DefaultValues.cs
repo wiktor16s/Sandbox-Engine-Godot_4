@@ -1,6 +1,6 @@
 using Godot;
 
-namespace SandboxEngine.Materials;
+namespace SandboxEngine.Elements;
 
 public struct DefaultValues
 {

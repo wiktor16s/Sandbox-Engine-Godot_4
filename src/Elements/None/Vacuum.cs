@@ -1,6 +1,7 @@
 using Godot;
+using SandboxEngine.Map;
 
-namespace SandboxEngine.Materials.None;
+namespace SandboxEngine.Elements.None;
 
 public class Vacuum : Element
 {

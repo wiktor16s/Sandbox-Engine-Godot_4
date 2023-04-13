@@ -1,8 +1,8 @@
 using Godot;
 using SandboxEngine.Controllers;
-using SandboxEngine.Materials;
+using SandboxEngine.Elements;
 
-namespace SandboxEngine;
+namespace SandboxEngine.Map;
 
 public class Cell
 {
@@ -32,7 +32,7 @@ public class Cell
         Material = material;
     }
 
-    public int checkFreeCellsForGravitation()
+    public int CheckFreeCellsForGravitation()
     {
         var freeCellsDown = 0;
         for (var i = 1; i < Globals.Gravitation + 1; i++)

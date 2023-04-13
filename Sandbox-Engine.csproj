@@ -5,6 +5,6 @@
     <RootNamespace>SandboxEngine</RootNamespace>
   </PropertyGroup>
   <ItemGroup>
-    <Folder Include="src\Materials\Gas" />
+    <Folder Include="src\Elements\Gas" />
   </ItemGroup>
 </Project>

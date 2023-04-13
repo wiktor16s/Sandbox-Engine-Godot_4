@@ -1,4 +1,4 @@
-namespace SandboxEngine.Materials;
+namespace SandboxEngine.Elements.Solid.Immovable;
 
 public class Stone
 {

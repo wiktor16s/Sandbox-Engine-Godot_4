@@ -1,9 +1,8 @@
 using System;
 using Godot;
-using SandboxEngine.Materials;
-using static SandboxEngine.Globals;
+using SandboxEngine.Elements;
 
-namespace SandboxEngine;
+namespace SandboxEngine.Map;
 
 public static class MapController
 {
@@ -91,7 +90,7 @@ public static class MapController
     {
         return GetCellFromMapBuffer(position.X, position.Y);
     }
-    
+
     // public static void SetCellAt(Cell newCell, int x, int y)
     // {
     //     Cell cell = MapController.map[MapController.ComputeIndex(x, y)];

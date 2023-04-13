@@ -1,6 +1,7 @@
 using Godot;
+using SandboxEngine.Map;
 
-namespace SandboxEngine.Materials;
+namespace SandboxEngine.Elements;
 
 public abstract class Element
 {
@@ -50,12 +51,11 @@ public abstract class Element
     /// <param name="cell">Reference to affected cell</param>
     public abstract void Update(Cell cell);
 
-    
+
     public uint GetDefaultUintColor()
     {
         return Color.ToRgba32();
     }
-    
 }
 
 public enum EMaterial : short

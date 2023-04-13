@@ -1,7 +1,8 @@
 using Godot;
 using SandboxEngine.Controllers;
+using SandboxEngine.Map;
 
-namespace SandboxEngine.Materials.Solid.Movable;
+namespace SandboxEngine.Elements.Liquid;
 
 public class Water : Element
 {
@@ -27,7 +28,7 @@ public class Water : Element
     {
         //cell.HasBeenUpdatedThisFrame = true;
         cell.LastUpdatedInTick = Globals.tickOscillator;
-        
+
         var freeCellsDown = 0;
         var freeSpaceOnLeftDown = false;
         var freeSpaceOnRightDown = false;
@@ -52,8 +53,8 @@ public class Water : Element
             }
         }
 
-   
-        var leftFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y); 
+
+        var leftFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y);
         var LeftDownFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y + 1);
         var rightFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y);
         var RightDownFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y + 1);
@@ -67,22 +68,23 @@ public class Water : Element
         {
             freeSpaceOnLeft = MapController.GetCellFromMapBuffer(leftFromThisCell).Material == EMaterial.VACUUM;
         }
-        
+
         if (MapController.InBounds(LeftDownFromThisCell))
         {
             freeSpaceOnLeftDown = MapController.GetCellFromMapBuffer(LeftDownFromThisCell).Material == EMaterial.VACUUM;
         }
-        
+
         if (MapController.InBounds(RightDownFromThisCell))
         {
-            freeSpaceOnRightDown = MapController.GetCellFromMapBuffer(RightDownFromThisCell).Material == EMaterial.VACUUM;
+            freeSpaceOnRightDown =
+                MapController.GetCellFromMapBuffer(RightDownFromThisCell).Material == EMaterial.VACUUM;
         }
 
 
         if (freeSpaceOnLeftDown && freeSpaceOnRightDown)
         {
             var randBool = Utils.GetRandomBool();
-            
+
             freeSpaceOnLeftDown = !randBool;
             freeSpaceOnRightDown = randBool;
             freeSpaceOnLeft = false;
@@ -95,7 +97,7 @@ public class Water : Element
                 var randBool = Utils.GetRandomBool();
                 freeSpaceOnLeft = !randBool;
                 freeSpaceOnRight = !freeSpaceOnLeft;
-            }    
+            }
         }
 
         if (freeCellsDown > 0)
@@ -131,6 +133,7 @@ public class Water : Element
         // GD.PrintRich($"L {L}");
 
         if (freeCellsDown > 0 || freeSpaceOnLeft || freeSpaceOnRight)
-            Renderer.DrawCell(cell.ConstPosition, MaterialPool.Vacuum.Material); //todo fix! apply swapping based on density
+            Renderer.DrawCell(cell.ConstPosition,
+                MaterialPool.Vacuum.Material); //todo fix! apply swapping based on density
     }
 }
