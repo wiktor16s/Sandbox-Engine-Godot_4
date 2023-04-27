@@ -8,14 +8,13 @@ public class Cell
 {
     public readonly Vector2I ConstPosition;
 
-    //public bool HasBeenUpdatedThisFrame;
     public bool LastUpdatedInTick;
     public uint Lifetime;
     public EMaterial Material;
     public Vector2 PositionOffset;
     public int Temperature;
     public Vector2 Velocity;
-
+    public bool IsFalling;
     public Cell(int x, int y)
     {
         //HasBeenUpdatedThisFrame = true;
@@ -25,6 +24,7 @@ public class Cell
         Temperature = 0;
         Lifetime = 0;
         LastUpdatedInTick = Globals.tickOscillator;
+        IsFalling = true;
     }
 
     public void SetMaterial(EMaterial material) // todo change type to interface

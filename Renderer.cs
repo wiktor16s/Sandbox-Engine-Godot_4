@@ -113,6 +113,7 @@ public partial class Renderer : Sprite2D
 
     public override void _PhysicsProcess(double delta)
     {
+        // Method intentionally left empty.
     }
 
     public override void _Process(double delta)

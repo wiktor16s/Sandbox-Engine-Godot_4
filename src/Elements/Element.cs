@@ -13,6 +13,7 @@ public abstract class Element
     public readonly int FlashPoint;
     public readonly int FreezingPoint;
     public readonly EMaterial Material;
+    public readonly ESubstance Substance;
 
     /// <param name="id">Unique identifier or index of specific material</param>
     /// <param name="color">Color for this material</param>
@@ -22,6 +23,7 @@ public abstract class Element
     /// <param name="afterFreezingTransformation">Determines which material it turns into when it freezes</param>
     /// <param name="afterBurningTransformation">Determines which material it will turn into when burned</param>
     /// <param name="defaults">Default values when cell is spawned</param>
+    /// <param name="substance">Defines type of substance like fluid, solid static</param>
     protected Element(
         EMaterial id,
         Color color,
@@ -30,8 +32,9 @@ public abstract class Element
         uint caloricValue,
         EMaterial afterFreezingTransformation,
         EMaterial afterBurningTransformation,
-        DefaultValues defaults
-    )
+        DefaultValues defaults, 
+        ESubstance substance
+        )
     {
         Material = id;
         Color = color;
@@ -40,8 +43,8 @@ public abstract class Element
         CaloricValue = caloricValue;
         AfterFreezingTransformation = afterFreezingTransformation;
         AfterBurningTransformation = afterBurningTransformation;
-
         Defaults = defaults;
+        Substance = substance;
     }
 
     /// <summary>
@@ -65,4 +68,13 @@ public enum EMaterial : short
     VACUUM = 2,
     WATER = 3,
     UNKNOWN = 4
+}
+
+public enum ESubstance : short
+{
+    AIR = 0,
+    SOLID = 1,
+    FLUID = 2,
+    STATIC = 3,
+    VACUUM = 4
 }

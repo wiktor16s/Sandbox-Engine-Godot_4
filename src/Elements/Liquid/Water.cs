@@ -19,7 +19,7 @@ public class Water : Element
         EMaterial afterBurningTransformation,
         DefaultValues defaultValues
     ) : base(id, color, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
-        afterBurningTransformation, defaultValues)
+        afterBurningTransformation, defaultValues, ESubstance.FLUID)
     {
         // constructor
     }

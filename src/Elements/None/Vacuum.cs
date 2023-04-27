@@ -8,7 +8,7 @@ public class Vacuum : Element
     public Vacuum(EMaterial id, Color color, int flashPoint, int freezingPoint, uint caloricValue,
         EMaterial afterFreezingTransformation, EMaterial afterBurningTransformation, DefaultValues defaults) : base(id,
         color, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation, afterBurningTransformation,
-        defaults)
+        defaults, ESubstance.VACUUM)
     {
     }
 

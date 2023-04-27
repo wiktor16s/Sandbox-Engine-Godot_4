@@ -16,7 +16,7 @@ public class Sand : Element
         EMaterial afterBurningTransformation,
         DefaultValues defaultValues
     ) : base(id, color, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
-        afterBurningTransformation, defaultValues)
+        afterBurningTransformation, defaultValues, ESubstance.SOLID)
     {
         // constructor
     }
