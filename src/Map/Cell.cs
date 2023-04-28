@@ -7,6 +7,7 @@ namespace SandboxEngine.Map;
 public class Cell
 {
     public readonly Vector2I ConstPosition;
+    public bool IsFalling;
 
     public bool LastUpdatedInTick;
     public uint Lifetime;
@@ -14,7 +15,7 @@ public class Cell
     public Vector2 PositionOffset;
     public int Temperature;
     public Vector2 Velocity;
-    public bool IsFalling;
+
     public Cell(int x, int y)
     {
         //HasBeenUpdatedThisFrame = true;
@@ -32,18 +33,18 @@ public class Cell
         Material = material;
     }
 
-    public int CheckFreeCellsForGravitation()
+    public int CheckFreeCellsDown(int amount, Vector2I direction)
     {
-        var freeCellsDown = 0;
-        for (var i = 1; i < Globals.Gravitation + 1; i++)
+        var freeCells = 0;
+        for (var i = 1; i < amount + 1; i++)
         {
-            if (MapController.InBounds(ConstPosition.X, ConstPosition.Y + i) &&
-                MaterialPool.GetByMaterial(
-                        MapController.GetCellFromMapBuffer(ConstPosition.X, ConstPosition.Y + i).Material).Defaults
-                    .Density < MaterialPool.GetByMaterial(Material).Defaults.Density
-               )
+            if (
+                MapController.InBounds(ConstPosition.X, ConstPosition.Y + i) &&
+                CheckCellIsDenserThanTargetCell(new Vector2I(ConstPosition.X, ConstPosition.Y + i)) &&
+                CheckTargetCellIsMovable(new Vector2I(ConstPosition.X, ConstPosition.Y + i))
+            )
             {
-                freeCellsDown = i;
+                freeCells = i;
             }
             else
             {
@@ -51,7 +52,49 @@ public class Cell
             }
         }
 
-        return freeCellsDown;
+        return freeCells;
+    }
+    
+    
+    
+    public int CheckFreeCells(int amount, Vector2I direction)
+    {
+        var freeCells = 0;
+        for (var i = 1; i < amount + 1; i++)
+        {
+            if (!MapController.InBounds(ConstPosition.X + direction.X * i, ConstPosition.Y + direction.Y * i)) return freeCells;
+
+            var nextElement = MaterialPool.GetByMaterial(
+                MapController.GetCellFromMapBuffer(ConstPosition.X + direction.X * i, ConstPosition.Y + direction.Y * i).Material
+            );
+
+            if (
+                nextElement.Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density &&
+                nextElement.Substance is ESubstance.AIR or ESubstance.FLUID or ESubstance.VACUUM
+            )
+            {
+                freeCells = i;
+            }
+            else
+            {
+                break;
+            }
+        }
+        return freeCells;
+    }
+
+    public bool CheckCellIsDenserThanTargetCell(Vector2I targetPosition)
+    {
+        return MaterialPool.GetByMaterial(
+            MapController.GetCellFromMapBuffer(targetPosition.X, targetPosition.Y).Material
+        ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+    }
+
+    public bool CheckTargetCellIsMovable(Vector2I targetPosition)
+    {
+        return MaterialPool.GetByMaterial(
+            MapController.GetCellFromMapBuffer(targetPosition.X, targetPosition.Y).Material
+        ).Substance is ESubstance.AIR or ESubstance.FLUID or ESubstance.VACUUM;
     }
 
     public bool checkFreeCellsOnLeftDown()
@@ -168,4 +211,5 @@ public class Cell
 
         Renderer.DrawCell(new Vector2I(ConstPosition.X, ConstPosition.Y), MaterialPool.Vacuum.Material);
     }
+    
 }

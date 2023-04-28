@@ -11,7 +11,7 @@ public struct DefaultValues
     public readonly short Density;
     public readonly short Mass;
 
-    public DefaultValues(int temperature, Vector2I velocity, uint lifetime, Vector2I positionOffset, short density,
+    public DefaultValues(int temperature, Vector2I velocity, uint lifetime, Vector2 positionOffset, short density,
         short mass)
     {
         Temperature = temperature;
@@ -19,6 +19,6 @@ public struct DefaultValues
         Lifetime = lifetime;
         PositionOffset = positionOffset;
         Density = density;
-        Mass = (short)(density * mass);
+        Mass = mass;
     }
 }

@@ -55,9 +55,9 @@ public class Water : Element
 
 
         var leftFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y);
-        var LeftDownFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y + 1);
+        var leftDownFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y + 1);
         var rightFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y);
-        var RightDownFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y + 1);
+        var rightDownFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y + 1);
 
         if (MapController.InBounds(rightFromThisCell))
         {
@@ -69,15 +69,15 @@ public class Water : Element
             freeSpaceOnLeft = MapController.GetCellFromMapBuffer(leftFromThisCell).Material == EMaterial.VACUUM;
         }
 
-        if (MapController.InBounds(LeftDownFromThisCell))
+        if (MapController.InBounds(leftDownFromThisCell))
         {
-            freeSpaceOnLeftDown = MapController.GetCellFromMapBuffer(LeftDownFromThisCell).Material == EMaterial.VACUUM;
+            freeSpaceOnLeftDown = MapController.GetCellFromMapBuffer(leftDownFromThisCell).Material == EMaterial.VACUUM;
         }
 
-        if (MapController.InBounds(RightDownFromThisCell))
+        if (MapController.InBounds(rightDownFromThisCell))
         {
             freeSpaceOnRightDown =
-                MapController.GetCellFromMapBuffer(RightDownFromThisCell).Material == EMaterial.VACUUM;
+                MapController.GetCellFromMapBuffer(rightDownFromThisCell).Material == EMaterial.VACUUM;
         }
 
 
@@ -108,13 +108,13 @@ public class Water : Element
         }
         else if (freeSpaceOnLeftDown)
         {
-            cell.Move(LeftDownFromThisCell);
-            Renderer.DrawCell(LeftDownFromThisCell, Material);
+            cell.Move(leftDownFromThisCell);
+            Renderer.DrawCell(leftDownFromThisCell, Material);
         }
         else if (freeSpaceOnRightDown)
         {
-            cell.Move(RightDownFromThisCell);
-            Renderer.DrawCell(RightDownFromThisCell, Material);
+            cell.Move(rightDownFromThisCell);
+            Renderer.DrawCell(rightDownFromThisCell, Material);
         }
         else if (freeSpaceOnRight)
         {
