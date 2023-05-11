@@ -14,6 +14,11 @@ public class Vacuum : Element
 
     public override void Update(Cell cell)
     {
-        // Do nothing
+        if (cell.IsFalling)
+        {
+       
+            cell.IsFalling = false;
+            Renderer.DrawCell(cell.ConstPosition, cell.Material);
+        }
     }
 }

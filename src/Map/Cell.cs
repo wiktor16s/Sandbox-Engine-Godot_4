@@ -25,7 +25,7 @@ public class Cell
         Temperature = 0;
         Lifetime = 0;
         LastUpdatedInTick = Globals.tickOscillator;
-        IsFalling = true;
+        IsFalling = false;
     }
 
     public void SetMaterial(EMaterial material) // todo change type to interface
@@ -33,39 +33,17 @@ public class Cell
         Material = material;
     }
 
-    public int CheckFreeCellsDown(int amount, Vector2I direction)
-    {
-        var freeCells = 0;
-        for (var i = 1; i < amount + 1; i++)
-        {
-            if (
-                MapController.InBounds(ConstPosition.X, ConstPosition.Y + i) &&
-                CheckCellIsDenserThanTargetCell(new Vector2I(ConstPosition.X, ConstPosition.Y + i)) &&
-                CheckTargetCellIsMovable(new Vector2I(ConstPosition.X, ConstPosition.Y + i))
-            )
-            {
-                freeCells = i;
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        return freeCells;
-    }
-    
-    
-    
     public int CheckFreeCells(int amount, Vector2I direction)
     {
         var freeCells = 0;
         for (var i = 1; i < amount + 1; i++)
         {
-            if (!MapController.InBounds(ConstPosition.X + direction.X * i, ConstPosition.Y + direction.Y * i)) return freeCells;
+            if (!MapController.InBounds(ConstPosition.X + direction.X * i, ConstPosition.Y + direction.Y * i))
+                return freeCells;
 
             var nextElement = MaterialPool.GetByMaterial(
-                MapController.GetCellFromMapBuffer(ConstPosition.X + direction.X * i, ConstPosition.Y + direction.Y * i).Material
+                MapController.GetCellFromMapBuffer(ConstPosition.X + direction.X * i, ConstPosition.Y + direction.Y * i)
+                    .Material
             );
 
             if (
@@ -80,6 +58,7 @@ public class Cell
                 break;
             }
         }
+
         return freeCells;
     }
 
@@ -146,6 +125,9 @@ public class Cell
             case EMaterial.WATER:
                 MaterialPool.Water.Update(this);
                 break;
+            case EMaterial.VACUUM:
+                MaterialPool.Vacuum.Update(this);
+                break;
         }
     }
 
@@ -176,6 +158,7 @@ public class Cell
         var tempTemperature = Temperature;
         var tempPositionOffset = PositionOffset;
         var tempLastUpdatedInTick = LastUpdatedInTick;
+        var tempIsFalling = IsFalling;
 
         Material = destinationCell.Material;
         Lifetime = destinationCell.Lifetime;
@@ -183,6 +166,7 @@ public class Cell
         Temperature = destinationCell.Temperature;
         PositionOffset = destinationCell.PositionOffset;
         LastUpdatedInTick = destinationCell.LastUpdatedInTick;
+        IsFalling = destinationCell.IsFalling;
 
         destinationCell.Material = tempMaterial;
         destinationCell.Lifetime = tempLifetime;
@@ -190,7 +174,9 @@ public class Cell
         destinationCell.Temperature = tempTemperature;
         destinationCell.PositionOffset = tempPositionOffset;
         destinationCell.LastUpdatedInTick = tempLastUpdatedInTick;
+        destinationCell.IsFalling = tempIsFalling;
 
+        SetIsFallingOnPath(ConstPosition, destinationCell.ConstPosition);
 
         Renderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
         Renderer.DrawCell(ConstPosition, Material); // draw in new position
@@ -199,6 +185,56 @@ public class Cell
     public void Swap(Vector2I position)
     {
         Swap(position.X, position.Y);
+    }
+
+    public void SetIsFallingOnPath(Vector2I pos1, Vector2I pos2)
+    {
+        //todo optimalize this for god sake...!
+        var path = Utils.GetShortestPathBetweenTwoCells(pos1, pos2);
+        foreach (var position in path)
+        {
+            SetIsFallingAroundPosition(pos1);
+            SetIsFallingAroundPosition(position);
+        }
+    }
+
+    public void SetIsFallingAroundPosition(Vector2I position)
+    {
+        if (MapController.InBounds(position + Vector2I.Up))
+        {
+            var cellUp = MapController.GetCellFromMapBuffer(position + Vector2I.Up);
+            if(MaterialPool.GetByMaterial(cellUp.Material).Substance is not ESubstance.VACUUM)
+            {
+                cellUp.IsFalling = true;
+            }
+        }
+
+        if (MapController.InBounds(position + Vector2I.Down))
+        {
+            var cellDown = MapController.GetCellFromMapBuffer(position + Vector2I.Down);
+            if(MaterialPool.GetByMaterial(cellDown.Material).Substance is not ESubstance.VACUUM)
+            {
+                cellDown.IsFalling = true;
+            }
+        }
+
+        if (MapController.InBounds(position + Vector2I.Left))
+        {
+            var cellLeft = MapController.GetCellFromMapBuffer(position + Vector2I.Left);
+            if(MaterialPool.GetByMaterial(cellLeft.Material).Substance is not ESubstance.VACUUM)
+            {
+                cellLeft.IsFalling = true;
+            }
+        }
+
+        if (MapController.InBounds(position + Vector2I.Right))
+        {
+            var cellRight = MapController.GetCellFromMapBuffer(position + Vector2I.Right);
+            if(MaterialPool.GetByMaterial(cellRight.Material).Substance is not ESubstance.VACUUM)
+            {
+                cellRight.IsFalling = true;
+            }
+        }
     }
 
     private void SetDefaults()
@@ -211,5 +247,4 @@ public class Cell
 
         Renderer.DrawCell(new Vector2I(ConstPosition.X, ConstPosition.Y), MaterialPool.Vacuum.Material);
     }
-    
 }
