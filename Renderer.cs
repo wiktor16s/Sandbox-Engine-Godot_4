@@ -1,6 +1,7 @@
 using Godot;
 using SandboxEngine.Controllers;
-using SandboxEngine.Materials;
+using SandboxEngine.Elements;
+using SandboxEngine.Map;
 
 namespace SandboxEngine;
 
@@ -8,12 +9,7 @@ public partial class Renderer : Sprite2D
 {
     public static Image _mapImage;
     public static ImageTexture _mapTexture;
-
-    private int A;
-    private int B;
-    private int C;
     public int Height;
-    private int SUM;
     public int Width;
 
     private void LoadMapFromTexture()
@@ -41,8 +37,10 @@ public partial class Renderer : Sprite2D
         }
     }
 
-    public static Color GetColorByMaterial(EMaterial material)
+    public static Color GetColorByMaterial(EMaterial material, bool isDebug = false)
     {
+        if (isDebug) return new Color(255, 0, 255);
+        
         switch (material)
         {
             case EMaterial.SAND:
@@ -83,9 +81,10 @@ public partial class Renderer : Sprite2D
 
     public static void DrawCell(Vector2I position, EMaterial material)
     {
-        MapController.GetCellFromMapBuffer(position.X, position.Y).SetMaterial(material);
+        var cell = MapController.GetCellFromMapBuffer(position.X, position.Y); 
+        cell.SetMaterial(material);
         _mapImage.SetPixelv(position, GetColorByMaterial(material));
-    }
+        }
 
     //! System Overrides
 
@@ -96,6 +95,7 @@ public partial class Renderer : Sprite2D
             var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
             if (MapController.InBounds(mousePosition.X, mousePosition.Y))
             {
+                MapController.GetCellFromMapBuffer(mousePosition).IsFalling = true;
                 DrawCell(mousePosition, EMaterial.SAND);
             }
         }
@@ -112,29 +112,17 @@ public partial class Renderer : Sprite2D
 
     public override void _Ready()
     {
+        Engine.MaxFps = 0;
         LoadMapFromTexture();
     }
 
     public override void _PhysicsProcess(double delta)
     {
+        // Method intentionally left empty.
     }
 
     public override void _Process(double delta)
     {
-        //var rand = GD.Randi() % 2 == 1;
-        // if (Utils.Generator.Next(0, 2) == 0)
-        // {
-        //     A++;
-        // }
-        // else
-        // {
-        //     B++;
-        // }
-
-        //C++;
-        //SUM += A - B;
-        //GD.Print($"{SUM / C}");
-
         MapController.UpdateAll();
         _mapTexture.Update(_mapImage);
         Texture = _mapTexture;

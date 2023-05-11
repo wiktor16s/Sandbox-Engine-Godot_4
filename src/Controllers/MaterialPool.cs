@@ -1,8 +1,9 @@
 using System;
 using Godot;
-using SandboxEngine.Materials;
-using SandboxEngine.Materials.None;
-using SandboxEngine.Materials.Solid.Movable;
+using SandboxEngine.Elements;
+using SandboxEngine.Elements.Liquid;
+using SandboxEngine.Elements.None;
+using SandboxEngine.Elements.Solid.Movable;
 
 namespace SandboxEngine.Controllers;
 
@@ -32,7 +33,7 @@ public static class MaterialPool
         EMaterial.VACUUM,
         new DefaultValues(0, new Vector2I(0, 0), 0, new Vector2I(0, 0), short.MinValue, short.MinValue)
     );
-    
+
     public static readonly Water Water = new(
         EMaterial.WATER,
         new Color(0, 0, 255),
