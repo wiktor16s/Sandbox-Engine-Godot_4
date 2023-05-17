@@ -203,7 +203,7 @@ public class Cell
         if (MapController.InBounds(position + Vector2I.Up))
         {
             var cellUp = MapController.GetCellFromMapBuffer(position + Vector2I.Up);
-            if(MaterialPool.GetByMaterial(cellUp.Material).Substance is not ESubstance.VACUUM)
+            if (MaterialPool.GetByMaterial(cellUp.Material).Substance is not ESubstance.VACUUM)
             {
                 cellUp.IsFalling = true;
             }
@@ -212,7 +212,7 @@ public class Cell
         if (MapController.InBounds(position + Vector2I.Down))
         {
             var cellDown = MapController.GetCellFromMapBuffer(position + Vector2I.Down);
-            if(MaterialPool.GetByMaterial(cellDown.Material).Substance is not ESubstance.VACUUM)
+            if (MaterialPool.GetByMaterial(cellDown.Material).Substance is not ESubstance.VACUUM)
             {
                 cellDown.IsFalling = true;
             }
@@ -221,7 +221,7 @@ public class Cell
         if (MapController.InBounds(position + Vector2I.Left))
         {
             var cellLeft = MapController.GetCellFromMapBuffer(position + Vector2I.Left);
-            if(MaterialPool.GetByMaterial(cellLeft.Material).Substance is not ESubstance.VACUUM)
+            if (MaterialPool.GetByMaterial(cellLeft.Material).Substance is not ESubstance.VACUUM)
             {
                 cellLeft.IsFalling = true;
             }
@@ -230,7 +230,7 @@ public class Cell
         if (MapController.InBounds(position + Vector2I.Right))
         {
             var cellRight = MapController.GetCellFromMapBuffer(position + Vector2I.Right);
-            if(MaterialPool.GetByMaterial(cellRight.Material).Substance is not ESubstance.VACUUM)
+            if (MaterialPool.GetByMaterial(cellRight.Material).Substance is not ESubstance.VACUUM)
             {
                 cellRight.IsFalling = true;
             }

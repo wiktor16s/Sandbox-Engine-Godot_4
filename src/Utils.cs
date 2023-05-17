@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Godot;
 using SandboxEngine.Map;
 
@@ -22,10 +21,9 @@ public static class Utils
     {
         return Generator.Next() % 2 == 0;
     }
-    
+
     public static Vector2I[] GetShortestPathBetweenTwoCells(Vector2I pos1, Vector2I pos2)
     {
-        
         // If the two points are the same no need to iterate. Just run the provided function
         if (pos1 == pos2)
         {
@@ -48,7 +46,7 @@ public static class Utils
         var shorterSideLength = Math.Min(Math.Abs(xDiff), Math.Abs(yDiff));
         var slope = shorterSideLength == 0 || longerSideLength == 0 ? 0 : (float)shorterSideLength / longerSideLength;
 
-        Vector2I[] path = new Vector2I[longerSideLength];
+        var path = new Vector2I[longerSideLength];
 
         int shorterSideIncrease;
         for (var i = 1; i <= longerSideLength; i++)
@@ -73,6 +71,15 @@ public static class Utils
                 path[i - 1] = new Vector2I(currentX, currentY);
             }
         }
+
         return path;
+    }
+
+    public static double Normalize(double value, double minValue, double maxValue)
+    {
+        if (minValue == maxValue) throw new ArgumentException("MinValue and MaxValue must be different.");
+        var normalizedValue = (value - minValue) / (maxValue - minValue);
+        normalizedValue = Math.Max(0, Math.Min(1, normalizedValue));
+        return normalizedValue;
     }
 }

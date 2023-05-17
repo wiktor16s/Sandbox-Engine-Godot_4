@@ -27,8 +27,12 @@ public class Sand : Element
         if (MaterialPool.GetByMaterial(cell.Material).Substance is not (ESubstance.FLUID or ESubstance.AIR
             or ESubstance.SOLID))
             return false;
-        
+
         if (!cell.IsFalling) return false;
+        if (GD.Randf() > 0.95f)
+        {
+            return false; // slowdown
+        }
 
         return true;
     }
@@ -40,76 +44,98 @@ public class Sand : Element
 
     public override void Update(Cell cell)
     {
-        if (!ShouldBeUpdated(cell)) return;
+        if (!ShouldBeUpdated(cell))
+        {
+            return;
+        }
+
         cell.LastUpdatedInTick = Globals.tickOscillator;
 
         if (IsVerticalVelocity(cell))
         {
-            var freeCellsDown = cell.CheckFreeCells((int)cell.Velocity.Y, Vector2I.Down);
-            if (CanFallAllWayDown(cell, freeCellsDown))
-            {
-                FallAllWayDown(cell, freeCellsDown);
-                return;
-            }
-
-            if (CanFallNotAllWayDown(cell, freeCellsDown))
-            {
-                FallNotAllWayDown(cell, freeCellsDown);
-                return;
-            }
-
-            if (IsOnGround(freeCellsDown))
-            {
-                Convert_Y_To_X_Velocity(cell);
-
-                if (IsHorizontalVelocity(cell))
-                {
-                    HandleHorizontalVelocity(cell);
-                }
-
-                return;
-            }
-
-            GD.Print("Unhandled vertical velocity");
+            UpdateVerticalVelocity(cell);
         }
         else
         {
-            var freeCellsDown = cell.CheckFreeCells(1, Vector2I.Down);
-            if (CanStartFalling(freeCellsDown))
+            UpdateHorizontalVelocity(cell);
+        }
+    }
+
+    private void UpdateVerticalVelocity(Cell cell)
+    {
+        var freeCellsDown = cell.CheckFreeCells((int)cell.Velocity.Y, Vector2I.Down);
+
+        if (CanFallAllWayDown(cell, freeCellsDown))
+        {
+            FallAllWayDown(cell, freeCellsDown);
+            return;
+        }
+
+        if (CanFallNotAllWayDown(cell, freeCellsDown))
+        {
+            FallNotAllWayDown(cell, freeCellsDown);
+            return;
+        }
+
+        if (IsOnGround(freeCellsDown))
+        {
+            if (GD.Randf() < 0.99f)
             {
-                StartFalling(cell);
-                if (IsHorizontalVelocity(cell))
-                {
-                    HandleDiagonalVelocity(cell);
-                }
-                else
-                {
-                    cell.Swap(cell.ConstPosition.X + (int)cell.Velocity.X, cell.ConstPosition.Y + (int)cell.Velocity.Y);
-                    cell.Velocity.Y += Globals.Gravitation;
-                }
+                cell.IsFalling = false;
+                cell.Velocity = Vector2I.Zero;
+                return;
+            }
+            Convert_Y_To_X_Velocity(cell);
+
+            if (IsHorizontalVelocity(cell))
+            {
+                HandleHorizontalVelocity(cell);
+            }
+
+            return;
+        }
+
+        GD.Print("Unhandled vertical velocity");
+    }
+
+    private void UpdateHorizontalVelocity(Cell cell)
+    {
+        var freeCellsDown = cell.CheckFreeCells(1, Vector2I.Down);
+
+        if (CanStartFalling(freeCellsDown))
+        {
+            StartFalling(cell);
+            if (IsHorizontalVelocity(cell))
+            {
+                HandleDiagonalVelocity(cell);
             }
             else
             {
-                var freeCellsLeftDown = cell.CheckFreeCells(1, Vector2I.Left + Vector2I.Down);
-                var freeCellsRightDown = cell.CheckFreeCells(1, Vector2I.Right + Vector2I.Down);
-
-                if (CanFallDiagonal(freeCellsLeftDown, freeCellsRightDown))
-                {
-                    HandleDiagonal(cell, freeCellsLeftDown, freeCellsRightDown);
-                    return;
-                }
-
-                if (IsFluid(cell))
-                {
-                    HandleFluid(cell);
-                }
-                else
-                {
-                    cell.Velocity.X = 0;
-                    cell.Velocity.Y = 0;
-                    cell.IsFalling = false;
-                }
+                cell.Swap(cell.ConstPosition.X + (int)cell.Velocity.X, cell.ConstPosition.Y + (int)cell.Velocity.Y);
+                cell.Velocity.Y += Globals.Gravitation;
             }
+
+            return;
+        }
+
+        var freeCellsLeftDown = cell.CheckFreeCells(1, Vector2I.Left + Vector2I.Down);
+        var freeCellsRightDown = cell.CheckFreeCells(1, Vector2I.Right + Vector2I.Down);
+
+        if (CanFallDiagonal(freeCellsLeftDown, freeCellsRightDown))
+        {
+            HandleDiagonal(cell, freeCellsLeftDown, freeCellsRightDown);
+            return;
+        }
+
+        if (IsFluid(cell))
+        {
+            HandleFluid(cell);
+        }
+        else
+        {
+            cell.Velocity.X = 0;
+            cell.Velocity.Y = 0;
+            cell.IsFalling = false;
         }
     }
 
@@ -251,6 +277,12 @@ public class Sand : Element
 
     private void HandleDiagonal(Cell cell, int freeCellsLeftDown, int freeCellsRightDown)
     {
+        if (GD.Randf() < 0.5f)
+        {
+            cell.IsFalling = false;
+            cell.Velocity = Vector2I.Zero;
+            return;
+        }
         if (freeCellsLeftDown > 0 && freeCellsRightDown > 0)
         {
             if (Utils.GetRandomBool())

@@ -20,7 +20,7 @@ public static class MaterialPool
         1,
         EMaterial.SAND,
         EMaterial.SAND,
-        new DefaultValues(20, new Vector2I(0, 0), 0, new Vector2I(0, 0), 50, 1)
+        new DefaultValues(20, new Vector2I(0, 0), 0, 0.1f, 0.1f)
     );
 
     public static readonly Vacuum Vacuum = new(
@@ -31,7 +31,7 @@ public static class MaterialPool
         0,
         EMaterial.VACUUM,
         EMaterial.VACUUM,
-        new DefaultValues(0, new Vector2I(0, 0), 0, new Vector2I(0, 0), short.MinValue, short.MinValue)
+        new DefaultValues(0, new Vector2I(0, 0), 0, 0, 0)
     );
 
     public static readonly Water Water = new(
@@ -42,7 +42,7 @@ public static class MaterialPool
         0,
         EMaterial.WATER,
         EMaterial.WATER,
-        new DefaultValues(0, new Vector2I(0, 0), 0, new Vector2I(0, 0), 10, 1)
+        new DefaultValues(0, new Vector2I(0, 0), 0, 10, 1)
     );
 
     public static Element GetByMaterial(EMaterial material)

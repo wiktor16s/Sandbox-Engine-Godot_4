@@ -1,11 +1,11 @@
 [gd_scene load_steps=3 format=3 uid="uid://csxaon5r1314p"]
 
-[ext_resource type="Texture2D" uid="uid://btq6bh0egmywk" path="res://assets/texture128x128-static-sand-blob.bmp" id="1_v5qxy"]
+[ext_resource type="Texture2D" uid="uid://b478jx7feo3ja" path="res://assets/texture256x256.bmp" id="1_476qu"]
 [ext_resource type="Script" path="res://Renderer.cs" id="2_gycyu"]
 
 [node name="Renderer" type="Sprite2D"]
 texture_filter = 1
 texture_repeat = 1
-texture = ExtResource("1_v5qxy")
+texture = ExtResource("1_476qu")
 centered = false
 script = ExtResource("2_gycyu")
