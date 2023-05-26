@@ -112,7 +112,7 @@ public partial class Renderer : Sprite2D
 
     public override void _Ready()
     {
-        Engine.MaxFps = 60;
+        Engine.MaxFps = Globals.MaxFps;
         LoadMapFromTexture();
     }
 

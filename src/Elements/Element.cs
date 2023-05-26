@@ -5,46 +5,27 @@ namespace SandboxEngine.Elements;
 
 public abstract class Element
 {
-    public readonly EMaterial AfterBurningTransformation;
-    public readonly EMaterial AfterFreezingTransformation;
-    public readonly uint CaloricValue;
     public readonly Color Color;
-    public readonly DefaultValues Defaults;
-    public readonly int FlashPoint;
-    public readonly int FreezingPoint;
     public readonly EMaterial Material;
+    public readonly Properties Properties;
     public readonly ESubstance Substance;
 
-    /// <param name="id">Unique identifier or index of specific material</param>
+
+    /// <param name="material">Unique identifier or index of specific material</param>
     /// <param name="color">Color for this material</param>
-    /// <param name="flashPoint">Temperature when this material catching fire</param>
-    /// <param name="freezingPoint">Temperature when this material freezes</param>
-    /// <param name="caloricValue">Amount of "fuel" determining how long this material will burn</param>
-    /// <param name="afterFreezingTransformation">Determines which material it turns into when it freezes</param>
-    /// <param name="afterBurningTransformation">Determines which material it will turn into when burned</param>
-    /// <param name="defaults">Default values when cell is spawned</param>
+    /// <param name="properties">Default values when cell is spawned</param>
     /// <param name="substance">Defines type of substance like fluid, solid static</param>
     protected Element(
-        EMaterial id,
+        EMaterial material,
+        ESubstance substance,
         Color color,
-        int flashPoint,
-        int freezingPoint,
-        uint caloricValue,
-        EMaterial afterFreezingTransformation,
-        EMaterial afterBurningTransformation,
-        DefaultValues defaults, 
-        ESubstance substance
-        )
+        Properties properties
+    )
     {
-        Material = id;
-        Color = color;
-        FlashPoint = flashPoint;
-        FreezingPoint = freezingPoint;
-        CaloricValue = caloricValue;
-        AfterFreezingTransformation = afterFreezingTransformation;
-        AfterBurningTransformation = afterBurningTransformation;
-        Defaults = defaults;
+        Material = material;
         Substance = substance;
+        Color = color;
+        Properties = properties;
     }
 
     /// <summary>

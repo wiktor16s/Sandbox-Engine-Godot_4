@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using Godot;
 using SandboxEngine.Elements;
 
@@ -118,12 +119,22 @@ public static class MapController
     //     return true;
     // }
 
+    // public static void UpdateAll()
+    // {
+    //     Globals.tickOscillator = !Globals.tickOscillator;
+    //     for (var i = 0; i < _mapBuffer.Length; i++) _mapBuffer[i].Update(0f);
+    // }
+
     public static void UpdateAll()
     {
         Globals.tickOscillator = !Globals.tickOscillator;
-        //GD.Print(UpdateTickCounter);
-        //for (var i = _mapBuffer.Length - 1; i > 0; i--) _mapBuffer[i].Update(0f);
-        for (var i = 0; i < _mapBuffer.Length; i++) _mapBuffer[i].Update(0f);
-        //for (var i = _mapBuffer.Length - 1; i > 0; i--) _mapBuffer[i].HasBeenUpdatedThisFrame = false;
+
+        for (var i = 0; i < Height; i++)
+            if (i % 2 == 0)
+                for (var j = 0; j < Width; j++)
+                    _mapBuffer[i * Width + j].Update(0f);
+            else
+                for (var j = Width - 1; j > 0; j--)
+                    _mapBuffer[i * Width + j].Update(0f);
     }
 }

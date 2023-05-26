@@ -47,7 +47,7 @@ public class Cell
             );
 
             if (
-                nextElement.Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density &&
+                nextElement.Properties.Density < MaterialPool.GetByMaterial(Material).Properties.Density &&
                 nextElement.Substance is ESubstance.AIR or ESubstance.FLUID or ESubstance.VACUUM
             )
             {
@@ -66,7 +66,7 @@ public class Cell
     {
         return MaterialPool.GetByMaterial(
             MapController.GetCellFromMapBuffer(targetPosition.X, targetPosition.Y).Material
-        ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+        ).Properties.Density < MaterialPool.GetByMaterial(Material).Properties.Density;
     }
 
     public bool CheckTargetCellIsMovable(Vector2I targetPosition)
@@ -82,7 +82,7 @@ public class Cell
                MaterialPool.GetByMaterial(
                    MapController.GetCellFromMapBuffer(ConstPosition.X - 1,
                        ConstPosition.Y + 1).Material
-               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+               ).Properties.Density < MaterialPool.GetByMaterial(Material).Properties.Density;
     }
 
     public bool checkFreeCellsOnLeft()
@@ -91,7 +91,7 @@ public class Cell
                MaterialPool.GetByMaterial(
                    MapController.GetCellFromMapBuffer(ConstPosition.X - 1,
                        ConstPosition.Y).Material
-               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+               ).Properties.Density < MaterialPool.GetByMaterial(Material).Properties.Density;
     }
 
     public bool checkFreeCellsOnRightDown()
@@ -100,7 +100,7 @@ public class Cell
                MaterialPool.GetByMaterial(
                    MapController.GetCellFromMapBuffer(ConstPosition.X + 1,
                        ConstPosition.Y + 1).Material
-               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+               ).Properties.Density < MaterialPool.GetByMaterial(Material).Properties.Density;
     }
 
     public bool checkFreeCellsOnRigh()
@@ -109,7 +109,7 @@ public class Cell
                MaterialPool.GetByMaterial(
                    MapController.GetCellFromMapBuffer(ConstPosition.X + 1,
                        ConstPosition.Y).Material
-               ).Defaults.Density < MaterialPool.GetByMaterial(Material).Defaults.Density;
+               ).Properties.Density < MaterialPool.GetByMaterial(Material).Properties.Density;
     }
 
 
@@ -240,9 +240,8 @@ public class Cell
     private void SetDefaults()
     {
         Material = MaterialPool.Vacuum.Material;
-        Lifetime = MaterialPool.Vacuum.Defaults.Lifetime;
-        Velocity = MaterialPool.Vacuum.Defaults.Velocity;
-        //HasBeenUpdatedThisFrame = false;
+        Lifetime = 0;
+        Velocity = Vector2I.Zero;
         LastUpdatedInTick = !Globals.tickOscillator;
 
         Renderer.DrawCell(new Vector2I(ConstPosition.X, ConstPosition.Y), MaterialPool.Vacuum.Material);

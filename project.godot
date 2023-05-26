@@ -22,8 +22,8 @@ settings/stdout/print_fps=true
 
 [display]
 
-window/size/viewport_width=256
-window/size/viewport_height=256
+window/size/viewport_width=128
+window/size/viewport_height=128
 window/size/window_width_override=500
 window/size/window_height_override=500
 window/vsync/vsync_mode=0
