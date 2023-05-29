@@ -10,16 +10,10 @@ public class Water : Element
     public int R = 0;
 
     public Water(
-        EMaterial id,
+        EMaterial material,
         Color color,
-        int flashPoint,
-        int freezingPoint,
-        uint caloricValue,
-        EMaterial afterFreezingTransformation,
-        EMaterial afterBurningTransformation,
-        DefaultValues defaultValues
-    ) : base(id, color, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
-        afterBurningTransformation, defaultValues, ESubstance.FLUID)
+        Properties properties
+    ) : base(material, ESubstance.FLUID, color, properties)
     {
         // constructor
     }
@@ -36,7 +30,6 @@ public class Water : Element
         var freeSpaceOnRight = false;
 
         for (var i = 1; i < Globals.Gravitation + 1; i++)
-        {
             // var nextCellMaterial = MapController.GetCellMaterialAt(cell.ConstPosition.X, cell.ConstPosition.Y);
             // var nextElement = CellPool.GetByMaterial(nextCellMaterial);
             if (
@@ -44,14 +37,9 @@ public class Water : Element
                 MapController.GetCellFromMapBuffer(cell.ConstPosition.X, cell.ConstPosition.Y + i).Material ==
                 EMaterial.VACUUM
             )
-            {
                 freeCellsDown = i;
-            }
             else
-            {
                 break;
-            }
-        }
 
 
         var leftFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y);
@@ -60,25 +48,17 @@ public class Water : Element
         var rightDownFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y + 1);
 
         if (MapController.InBounds(rightFromThisCell))
-        {
             freeSpaceOnRight = MapController.GetCellFromMapBuffer(rightFromThisCell).Material == EMaterial.VACUUM;
-        }
 
         if (MapController.InBounds(leftFromThisCell))
-        {
             freeSpaceOnLeft = MapController.GetCellFromMapBuffer(leftFromThisCell).Material == EMaterial.VACUUM;
-        }
 
         if (MapController.InBounds(leftDownFromThisCell))
-        {
             freeSpaceOnLeftDown = MapController.GetCellFromMapBuffer(leftDownFromThisCell).Material == EMaterial.VACUUM;
-        }
 
         if (MapController.InBounds(rightDownFromThisCell))
-        {
             freeSpaceOnRightDown =
                 MapController.GetCellFromMapBuffer(rightDownFromThisCell).Material == EMaterial.VACUUM;
-        }
 
 
         if (freeSpaceOnLeftDown && freeSpaceOnRightDown)

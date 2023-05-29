@@ -1,11 +1,20 @@
-[gd_scene load_steps=3 format=3 uid="uid://csxaon5r1314p"]
+[gd_scene load_steps=4 format=3 uid="uid://csxaon5r1314p"]
 
-[ext_resource type="Texture2D" uid="uid://btq6bh0egmywk" path="res://assets/texture128x128-static-sand-blob.bmp" id="1_v5qxy"]
+[ext_resource type="Texture2D" uid="uid://btq6bh0egmywk" path="res://assets/texture128x128-static-sand-blob.bmp" id="1_rv5rx"]
 [ext_resource type="Script" path="res://Renderer.cs" id="2_gycyu"]
+[ext_resource type="Script" path="res://fpsCounter.cs" id="3_0vap6"]
 
 [node name="Renderer" type="Sprite2D"]
 texture_filter = 1
 texture_repeat = 1
-texture = ExtResource("1_v5qxy")
+texture = ExtResource("1_rv5rx")
 centered = false
 script = ExtResource("2_gycyu")
+
+[node name="fpsCounter" type="Label" parent="."]
+offset_right = 25.0
+offset_bottom = 26.0
+theme_override_font_sizes/font_size = 8
+text = "0
+"
+script = ExtResource("3_0vap6")

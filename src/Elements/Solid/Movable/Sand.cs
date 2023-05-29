@@ -8,16 +8,10 @@ namespace SandboxEngine.Elements.Solid.Movable;
 public class Sand : Element
 {
     public Sand(
-        EMaterial id,
+        EMaterial material,
         Color color,
-        int flashPoint,
-        int freezingPoint,
-        uint caloricValue,
-        EMaterial afterFreezingTransformation,
-        EMaterial afterBurningTransformation,
-        DefaultValues defaultValues
-    ) : base(id, color, flashPoint, freezingPoint, caloricValue, afterFreezingTransformation,
-        afterBurningTransformation, defaultValues, ESubstance.SOLID)
+        Properties properties
+    ) : base(material, ESubstance.SOLID, color, properties)
     {
         // constructor
     }
@@ -27,8 +21,10 @@ public class Sand : Element
         if (MaterialPool.GetByMaterial(cell.Material).Substance is not (ESubstance.FLUID or ESubstance.AIR
             or ESubstance.SOLID))
             return false;
-        
+
         if (!cell.IsFalling) return false;
+        if (GD.Randf() > 1f) // todo sometime skip frame
+            return false; // slowdown
 
         return true;
     }
@@ -41,75 +37,88 @@ public class Sand : Element
     public override void Update(Cell cell)
     {
         if (!ShouldBeUpdated(cell)) return;
+
         cell.LastUpdatedInTick = Globals.tickOscillator;
 
         if (IsVerticalVelocity(cell))
-        {
-            var freeCellsDown = cell.CheckFreeCells((int)cell.Velocity.Y, Vector2I.Down);
-            if (CanFallAllWayDown(cell, freeCellsDown))
-            {
-                FallAllWayDown(cell, freeCellsDown);
-                return;
-            }
-
-            if (CanFallNotAllWayDown(cell, freeCellsDown))
-            {
-                FallNotAllWayDown(cell, freeCellsDown);
-                return;
-            }
-
-            if (IsOnGround(freeCellsDown))
-            {
-                Convert_Y_To_X_Velocity(cell);
-
-                if (IsHorizontalVelocity(cell))
-                {
-                    HandleHorizontalVelocity(cell);
-                }
-
-                return;
-            }
-
-            GD.Print("Unhandled vertical velocity");
-        }
+            UpdateVerticalVelocity(cell);
         else
+            UpdateHorizontalVelocity(cell);
+    }
+
+    private void UpdateVerticalVelocity(Cell cell)
+    {
+        var freeCellsDown = cell.CheckFreeCells((int)cell.Velocity.Y, Vector2I.Down);
+
+        if (CanFallAllWayDown(cell, freeCellsDown))
         {
-            var freeCellsDown = cell.CheckFreeCells(1, Vector2I.Down);
-            if (CanStartFalling(freeCellsDown))
+            FallAllWayDown(cell, freeCellsDown);
+            return;
+        }
+
+        if (CanFallNotAllWayDown(cell, freeCellsDown))
+        {
+            FallNotAllWayDown(cell, freeCellsDown);
+            return;
+        }
+
+        if (IsOnGround(freeCellsDown))
+        {
+            // if (GD.Randf() < 0.99f) //todo chance for bounce
+            // {
+            //     cell.IsFalling = false;
+            //     cell.Velocity = Vector2I.Zero;
+            //     return;
+            // }
+
+            Convert_Y_To_X_Velocity(cell);
+
+            if (IsHorizontalVelocity(cell)) HandleHorizontalVelocity(cell);
+
+            return;
+        }
+
+        GD.Print("Unhandled vertical velocity");
+    }
+
+    private void UpdateHorizontalVelocity(Cell cell)
+    {
+        var freeCellsDown = cell.CheckFreeCells(1, Vector2I.Down);
+
+        if (CanStartFalling(freeCellsDown))
+        {
+            StartFalling(cell);
+            if (IsHorizontalVelocity(cell))
             {
-                StartFalling(cell);
-                if (IsHorizontalVelocity(cell))
-                {
-                    HandleDiagonalVelocity(cell);
-                }
-                else
-                {
-                    cell.Swap(cell.ConstPosition.X + (int)cell.Velocity.X, cell.ConstPosition.Y + (int)cell.Velocity.Y);
-                    cell.Velocity.Y += Globals.Gravitation;
-                }
+                HandleDiagonalVelocity(cell);
             }
             else
             {
-                var freeCellsLeftDown = cell.CheckFreeCells(1, Vector2I.Left + Vector2I.Down);
-                var freeCellsRightDown = cell.CheckFreeCells(1, Vector2I.Right + Vector2I.Down);
-
-                if (CanFallDiagonal(freeCellsLeftDown, freeCellsRightDown))
-                {
-                    HandleDiagonal(cell, freeCellsLeftDown, freeCellsRightDown);
-                    return;
-                }
-
-                if (IsFluid(cell))
-                {
-                    HandleFluid(cell);
-                }
-                else
-                {
-                    cell.Velocity.X = 0;
-                    cell.Velocity.Y = 0;
-                    cell.IsFalling = false;
-                }
+                cell.Swap(cell.ConstPosition.X + (int)cell.Velocity.X, cell.ConstPosition.Y + (int)cell.Velocity.Y);
+                cell.Velocity.Y += Globals.Gravitation;
             }
+
+            return;
+        }
+
+        var freeCellsLeftDown = cell.CheckFreeCells(1, Vector2I.Left + Vector2I.Down);
+        var freeCellsRightDown = cell.CheckFreeCells(1, Vector2I.Right + Vector2I.Down);
+
+        if (CanFallDiagonal(freeCellsLeftDown, freeCellsRightDown))
+        {
+            HandleDiagonal(cell, freeCellsLeftDown, freeCellsRightDown);
+            return;
+        }
+
+        if (IsFluid(cell))
+        {
+            HandleFluid(cell);
+        }
+        else
+        {
+            cell.Velocity.X = 0;
+            cell.Velocity.Y = 0;
+            cell.IsFalling = false;
         }
     }
 
@@ -119,7 +128,7 @@ public class Sand : Element
 
         var randomNum = GD.Randf() / 3 + 1;
         cell.Velocity.X = Utils.GetRandomBool()
-            ? Math.Max((int)(cell.Velocity.Y / 3) * randomNum, 1f)
+            ? Math.Max((int)(cell.Velocity.Y / 3) * randomNum, 1f) // todo bounce power
             : -Math.Max((int)(cell.Velocity.Y / 3) * randomNum, 1f);
         cell.Velocity.Y = 0;
     }
@@ -179,13 +188,9 @@ public class Sand : Element
         if (freeCellsLeft > 0 && freeCellsRight > 0)
         {
             if (Utils.GetRandomBool())
-            {
                 freeCellsLeft = 0;
-            }
             else
-            {
                 freeCellsRight = 0;
-            }
         }
 
         if (freeCellsLeft > 0)
@@ -220,26 +225,22 @@ public class Sand : Element
         if (freeCellsLeftDown > 0 && freeCellsRightDown > 0)
         {
             if (Utils.GetRandomBool())
-            {
                 freeCellsLeftDown = 0;
-            }
             else
-            {
                 freeCellsRightDown = 0;
-            }
         }
 
         if (freeCellsLeftDown > 0)
         {
-            cell.Velocity.Y += Globals.Gravitation;
-            cell.Velocity.X += 1;
+            cell.Velocity.Y += freeCellsLeftDown;
+            cell.Velocity.X += freeCellsLeftDown;
             cell.Swap(cell.ConstPosition.X - freeCellsLeftDown, cell.ConstPosition.Y + freeCellsLeftDown);
         }
 
         if (freeCellsRightDown > 0)
         {
-            cell.Velocity.Y += Globals.Gravitation;
-            cell.Velocity.X += 1;
+            cell.Velocity.Y += freeCellsRightDown;
+            cell.Velocity.X += freeCellsRightDown;
             cell.Swap(cell.ConstPosition.X + freeCellsLeftDown, cell.ConstPosition.Y + freeCellsLeftDown);
         }
     }
@@ -251,16 +252,20 @@ public class Sand : Element
 
     private void HandleDiagonal(Cell cell, int freeCellsLeftDown, int freeCellsRightDown)
     {
+        // if (GD.Randf() < 0.5f) //todo chance for stop fall diagonal
+        if (false)
+        {
+            cell.IsFalling = false;
+            cell.Velocity = Vector2I.Zero;
+            return;
+        }
+
         if (freeCellsLeftDown > 0 && freeCellsRightDown > 0)
         {
             if (Utils.GetRandomBool())
-            {
                 freeCellsLeftDown = 0;
-            }
             else
-            {
                 freeCellsRightDown = 0;
-            }
         }
 
         if (freeCellsLeftDown > 0)

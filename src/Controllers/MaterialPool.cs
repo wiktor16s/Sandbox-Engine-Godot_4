@@ -15,34 +15,19 @@ public static class MaterialPool
     public static readonly Sand Sand = new(
         EMaterial.SAND,
         new Color(255, 255, 0),
-        1700,
-        -100,
-        1,
-        EMaterial.SAND,
-        EMaterial.SAND,
-        new DefaultValues(20, new Vector2I(0, 0), 0, new Vector2I(0, 0), 50, 1)
+        new Properties(0.5f, 0, 0.5f, 0.5f, 1700f, -100f, EMaterial.SAND, EMaterial.SAND)
     );
 
     public static readonly Vacuum Vacuum = new(
         EMaterial.VACUUM,
         new Color(0, 0, 0),
-        Globals.NeverBurnValue,
-        Globals.NeverFreezeValue,
-        0,
-        EMaterial.VACUUM,
-        EMaterial.VACUUM,
-        new DefaultValues(0, new Vector2I(0, 0), 0, new Vector2I(0, 0), short.MinValue, short.MinValue)
+        new Properties(0f, 0f, 0f, 0f, 0f, 0f, EMaterial.VACUUM, EMaterial.VACUUM)
     );
 
     public static readonly Water Water = new(
         EMaterial.WATER,
         new Color(0, 0, 255),
-        Globals.NeverBurnValue,
-        Globals.NeverFreezeValue,
-        0,
-        EMaterial.WATER,
-        EMaterial.WATER,
-        new DefaultValues(0, new Vector2I(0, 0), 0, new Vector2I(0, 0), 10, 1)
+        new Properties(0.4f, 0f, 0.8f, 1f, 0f, 0f, EMaterial.WATER, EMaterial.WATER)
     );
 
     public static Element GetByMaterial(EMaterial material)
