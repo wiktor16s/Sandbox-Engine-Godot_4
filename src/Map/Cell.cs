@@ -33,6 +33,17 @@ public class Cell
         Material = material;
     }
 
+    public bool CheckIsTargetPositionIsOccupiable(Vector2I targetPosition)
+    {
+        if (!MapController.InBounds(targetPosition.X, targetPosition.Y))
+            return false;
+        var targetCell = MapController.GetCellFromMapBuffer(targetPosition.X, targetPosition.Y);
+        var thisCellIsMoreDense = MaterialPool.GetByMaterial(targetCell.Material).Properties.Density <
+                                  MaterialPool.GetByMaterial(Material).Properties.Density;
+        var thisCellIsDiffMaterialThanTargetCell = targetCell.Material != Material;
+        return thisCellIsMoreDense && thisCellIsDiffMaterialThanTargetCell;
+    }
+
     public int CheckFreeCells(int amount, Vector2I direction)
     {
         var freeCells = 0;
@@ -50,13 +61,9 @@ public class Cell
                 nextElement.Properties.Density < MaterialPool.GetByMaterial(Material).Properties.Density &&
                 nextElement.Substance is ESubstance.AIR or ESubstance.FLUID or ESubstance.VACUUM
             )
-            {
                 freeCells = i;
-            }
             else
-            {
                 break;
-            }
         }
 
         return freeCells;

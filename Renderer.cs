@@ -105,6 +105,7 @@ public partial class Renderer : Sprite2D
             var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
             if (MapController.InBounds(mousePosition.X, mousePosition.Y))
             {
+                MapController.GetCellFromMapBuffer(mousePosition).IsFalling = true;
                 DrawCell(mousePosition, EMaterial.WATER);
             }
         }

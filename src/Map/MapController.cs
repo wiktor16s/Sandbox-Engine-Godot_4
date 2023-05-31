@@ -1,5 +1,4 @@
 using System;
-using System.Diagnostics;
 using Godot;
 using SandboxEngine.Elements;
 
@@ -68,6 +67,19 @@ public static class MapController
     public static bool InBounds(Vector2I position)
     {
         return InBounds(position.X, position.Y);
+    }
+
+    public static Vector2I NormalizePosition(Vector2I position)
+    {
+        // if (position.X > Width)
+        //     position.X = Width + 1;
+        // if (position.X < 0)
+        //     position.X = 0;
+        if (position.Y > Height - 1)
+            position.Y = Height - 1;
+        if (position.Y < 0)
+            position.Y = 0;
+        return position;
     }
 
     public static EMaterial GetCellMaterialFromMapBuffer(int x, int y)

@@ -24,12 +24,12 @@ public static class Utils
 
     public static Vector2I[] GetShortestPathBetweenTwoCells(Vector2I pos1, Vector2I pos2)
     {
+        if (!MapController.InBounds(pos1)) pos1 = MapController.NormalizePosition(pos1);
+        if (!MapController.InBounds(pos2)) pos2 = MapController.NormalizePosition(pos2);
+        
         // If the two points are the same no need to iterate. Just run the provided function
-        if (pos1 == pos2)
-        {
-            return new[] { pos1 };
-        }
-
+        if (pos1 == pos2) return new[] { pos1 };
+        
         var matrixX1 = pos1.X;
         var matrixY1 = pos1.Y;
         var matrixX2 = pos2.X;
@@ -66,10 +66,7 @@ public static class Utils
 
             var currentY = matrixY1 + yIncrease * yModifier;
             var currentX = matrixX1 + xIncrease * xModifier;
-            if (MapController.InBounds(currentX, currentY))
-            {
-                path[i - 1] = new Vector2I(currentX, currentY);
-            }
+            if (MapController.InBounds(currentX, currentY)) path[i - 1] = new Vector2I(currentX, currentY);
         }
 
         return path;

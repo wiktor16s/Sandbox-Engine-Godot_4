@@ -1,3 +1,4 @@
+using System;
 using Godot;
 using SandboxEngine.Controllers;
 using SandboxEngine.Map;
@@ -18,102 +19,105 @@ public class Water : Element
         // constructor
     }
 
+    private bool ShouldBeUpdated(Cell cell)
+    {
+        if (MaterialPool.GetByMaterial(cell.Material).Substance is not (ESubstance.FLUID or ESubstance.AIR
+            or ESubstance.SOLID))
+            return false;
+
+        if (!cell.IsFalling) return false;
+        return true;
+    }
+
+    public void ApplyGravity(Cell cell)
+    {
+        cell.Velocity += new Vector2I(0, 1);
+    }
+
+    public void ApplyAirResistance(Cell cell)
+    {
+        //cell.Velocity.X *= 0.8f;
+    }
+
     public override void Update(Cell cell)
     {
-        //cell.HasBeenUpdatedThisFrame = true;
+        if (!ShouldBeUpdated(cell)) return;
         cell.LastUpdatedInTick = Globals.tickOscillator;
 
-        var freeCellsDown = 0;
-        var freeSpaceOnLeftDown = false;
-        var freeSpaceOnRightDown = false;
-        var freeSpaceOnLeft = false;
-        var freeSpaceOnRight = false;
+        ApplyGravity(cell);
+        ApplyAirResistance(cell);
+        var nextPosition = cell.ConstPosition + (Vector2I)cell.Velocity;
+        var path = Utils.GetShortestPathBetweenTwoCells(cell.ConstPosition, nextPosition);
 
-        for (var i = 1; i < Globals.Gravitation + 1; i++)
-            // var nextCellMaterial = MapController.GetCellMaterialAt(cell.ConstPosition.X, cell.ConstPosition.Y);
-            // var nextElement = CellPool.GetByMaterial(nextCellMaterial);
-            if (
-                MapController.InBounds(cell.ConstPosition.X, cell.ConstPosition.Y + i) &&
-                MapController.GetCellFromMapBuffer(cell.ConstPosition.X, cell.ConstPosition.Y + i).Material ==
-                EMaterial.VACUUM
-            )
-                freeCellsDown = i;
-            else
-                break;
+        var finalPosition = cell.ConstPosition;
 
-
-        var leftFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y);
-        var leftDownFromThisCell = new Vector2I(cell.ConstPosition.X - 1, cell.ConstPosition.Y + 1);
-        var rightFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y);
-        var rightDownFromThisCell = new Vector2I(cell.ConstPosition.X + 1, cell.ConstPosition.Y + 1);
-
-        if (MapController.InBounds(rightFromThisCell))
-            freeSpaceOnRight = MapController.GetCellFromMapBuffer(rightFromThisCell).Material == EMaterial.VACUUM;
-
-        if (MapController.InBounds(leftFromThisCell))
-            freeSpaceOnLeft = MapController.GetCellFromMapBuffer(leftFromThisCell).Material == EMaterial.VACUUM;
-
-        if (MapController.InBounds(leftDownFromThisCell))
-            freeSpaceOnLeftDown = MapController.GetCellFromMapBuffer(leftDownFromThisCell).Material == EMaterial.VACUUM;
-
-        if (MapController.InBounds(rightDownFromThisCell))
-            freeSpaceOnRightDown =
-                MapController.GetCellFromMapBuffer(rightDownFromThisCell).Material == EMaterial.VACUUM;
-
-
-        if (freeSpaceOnLeftDown && freeSpaceOnRightDown)
-        {
-            var randBool = Utils.GetRandomBool();
-
-            freeSpaceOnLeftDown = !randBool;
-            freeSpaceOnRightDown = randBool;
-            freeSpaceOnLeft = false;
-            freeSpaceOnRight = false;
-        }
-        else
-        {
-            if (freeSpaceOnRight && freeSpaceOnLeft)
+        foreach (var pos in path)
+            if (cell.CheckIsTargetPositionIsOccupiable(pos))
             {
-                var randBool = Utils.GetRandomBool();
-                freeSpaceOnLeft = !randBool;
-                freeSpaceOnRight = !freeSpaceOnLeft;
+                finalPosition = pos;
+            }
+            else
+            {
+                cell.Velocity.Y *= -0.3f;
+                cell.Velocity.X += -Math.Sign(cell.Velocity.X) * cell.Velocity.Y * 0.5f;
+                break;
+            }
+
+
+        if (finalPosition == cell.ConstPosition && cell.IsFalling)
+        {
+            var leftDiagonal = cell.ConstPosition + new Vector2I(-1, 1);
+            var rightDiagonal = cell.ConstPosition + new Vector2I(1, 1);
+
+            var canMoveLeftDiagonal = cell.CheckIsTargetPositionIsOccupiable(leftDiagonal);
+            var canMoveRightDiagonal = cell.CheckIsTargetPositionIsOccupiable(rightDiagonal);
+
+            if (canMoveLeftDiagonal && canMoveRightDiagonal)
+            {
+                finalPosition = Utils.GetRandomBool() ? leftDiagonal : rightDiagonal;
+            }
+            else if (canMoveLeftDiagonal)
+            {
+                finalPosition = leftDiagonal;
+            }
+            else if (canMoveRightDiagonal)
+            {
+                finalPosition = rightDiagonal;
+            }
+            else
+            {
+                var left = cell.ConstPosition + new Vector2I(-1, 0);
+                var right = cell.ConstPosition + new Vector2I(1, 0);
+
+                var canMoveLeft = cell.CheckIsTargetPositionIsOccupiable(left);
+                var canMoveRight = cell.CheckIsTargetPositionIsOccupiable(right);
+
+                if (canMoveLeft && canMoveRight)
+                {
+                    finalPosition = Utils.GetRandomBool() ? left : right;
+                }
+                else if (canMoveLeft)
+                {
+                    finalPosition = left;
+                }
+                else if (canMoveRight)
+                {
+                    finalPosition = right;
+                }
+                else
+                {
+                    cell.IsFalling = false;
+                    return;
+                }
             }
         }
 
-        if (freeCellsDown > 0)
+        if (finalPosition == cell.ConstPosition && cell.IsFalling)
         {
-            cell.Velocity += new Vector2I(0, 1);
-            cell.Move(cell.ConstPosition.X, cell.ConstPosition.Y + freeCellsDown);
-            Renderer.DrawCell(new Vector2I(cell.ConstPosition.X, cell.ConstPosition.Y + freeCellsDown), Material);
-        }
-        else if (freeSpaceOnLeftDown)
-        {
-            cell.Move(leftDownFromThisCell);
-            Renderer.DrawCell(leftDownFromThisCell, Material);
-        }
-        else if (freeSpaceOnRightDown)
-        {
-            cell.Move(rightDownFromThisCell);
-            Renderer.DrawCell(rightDownFromThisCell, Material);
-        }
-        else if (freeSpaceOnRight)
-        {
-            cell.Move(rightFromThisCell);
-            Renderer.DrawCell(rightFromThisCell, Material);
+            cell.IsFalling = false;
+            return;
         }
 
-        else if (freeSpaceOnLeft)
-        {
-            cell.Move(leftFromThisCell);
-            Renderer.DrawCell(leftFromThisCell, Material);
-        }
-
-
-        // GD.PrintRich($"R {R}");
-        // GD.PrintRich($"L {L}");
-
-        if (freeCellsDown > 0 || freeSpaceOnLeft || freeSpaceOnRight)
-            Renderer.DrawCell(cell.ConstPosition,
-                MaterialPool.Vacuum.Material); //todo fix! apply swapping based on density
+        cell.Swap(finalPosition);
     }
 }
