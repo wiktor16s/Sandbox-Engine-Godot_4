@@ -104,39 +104,6 @@ public static class MapController
         return GetCellFromMapBuffer(position.X, position.Y);
     }
 
-    // public static void SetCellAt(Cell newCell, int x, int y)
-    // {
-    //     Cell cell = MapController.map[MapController.ComputeIndex(x, y)];
-    // }
-
-    // public static bool CompletelySurrounded(int x, int y)
-    // {
-    //     // Top
-    //     if (InBounds(x, y - 1) && !IsEmpty(x, y - 1)) return false;
-    //     // Bottom
-    //     if (InBounds(x, y + 1) && !IsEmpty(x, y + 1)) return false;
-    //     // Left
-    //     if (InBounds(x - 1, y) && !IsEmpty(x - 1, y)) return false;
-    //     // Right
-    //     if (InBounds(x + 1, y) && !IsEmpty(x + 1, y)) return false;
-    //     // Top Left
-    //     if (InBounds(x - 1, y - 1) && !IsEmpty(x - 1, y - 1)) return false;
-    //     // Top Right
-    //     if (InBounds(x + 1, y - 1) && !IsEmpty(x + 1, y - 1)) return false;
-    //     // Bottom Left
-    //     if (InBounds(x - 1, y + 1) && !IsEmpty(x - 1, y + 1)) return false;
-    //     // Bottom Right
-    //     if (InBounds(x + 1, y + 1) && !IsEmpty(x + 1, y + 1)) return false;
-    //
-    //     return true;
-    // }
-
-    // public static void UpdateAll()
-    // {
-    //     Globals.tickOscillator = !Globals.tickOscillator;
-    //     for (var i = 0; i < _mapBuffer.Length; i++) _mapBuffer[i].Update(0f);
-    // }
-
     public static void UpdateAll()
     {
         Globals.tickOscillator = !Globals.tickOscillator;
