@@ -27,7 +27,12 @@ public static class MaterialPool
     public static readonly Water Water = new(
         EMaterial.WATER,
         new Color(0, 0, 255),
-        new Properties(0.4f, 0f, 0.2f, 1f, 0f, 0f, EMaterial.WATER, EMaterial.WATER)
+        new Properties(0.4f, 0f, 0.2f, 4f, 0f, 0f, EMaterial.WATER, EMaterial.WATER)
+    );
+    public static readonly Water Oxygen = new(
+        EMaterial.OXYGEN,
+        new Color(220, 240, 255),
+        new Properties(0.1f, 0f, 0.1f, 4f, 0f, 0f, EMaterial.OXYGEN, EMaterial.OXYGEN)
     );
 
     public static Element GetByMaterial(EMaterial material)
@@ -37,6 +42,7 @@ public static class MaterialPool
             EMaterial.SAND => Sand,
             EMaterial.VACUUM => Vacuum,
             EMaterial.WATER => Water,
+            EMaterial.OXYGEN => Oxygen,
             _ => throw new ArgumentOutOfRangeException(nameof(material), material, null)
         };
     }

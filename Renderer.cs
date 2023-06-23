@@ -40,21 +40,12 @@ public partial class Renderer : Sprite2D
     public static Color GetColorByMaterial(EMaterial material, bool isDebug = false)
     {
         if (isDebug) return new Color(255, 0, 255);
-        
+
         switch (material)
         {
             case EMaterial.SAND:
             {
-                var LessRG = GD.Randi() % 50;
-                var MoreB = GD.Randi() % 50;
-
-                var newColor = new Color(
-                    (MaterialPool.Sand.Color.R - LessRG) / 255,
-                    (MaterialPool.Sand.Color.G - LessRG) / 255,
-                    (MaterialPool.Sand.Color.B + MoreB) / 255
-                );
-
-                return newColor;
+                return Utils.Darken(MaterialPool.Sand.Color, 100);
             }
 
             case EMaterial.WATER:
@@ -81,10 +72,10 @@ public partial class Renderer : Sprite2D
 
     public static void DrawCell(Vector2I position, EMaterial material)
     {
-        var cell = MapController.GetCellFromMapBuffer(position.X, position.Y); 
+        var cell = MapController.GetCellFromMapBuffer(position.X, position.Y);
         cell.SetMaterial(material);
         _mapImage.SetPixelv(position, GetColorByMaterial(material));
-        }
+    }
 
     //! System Overrides
 
@@ -107,6 +98,16 @@ public partial class Renderer : Sprite2D
             {
                 MapController.GetCellFromMapBuffer(mousePosition).IsFalling = true;
                 DrawCell(mousePosition, EMaterial.WATER);
+            }
+        }
+
+        if (Input.IsMouseButtonPressed(MouseButton.Middle))
+        {
+            var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
+            if (MapController.InBounds(mousePosition.X, mousePosition.Y))
+            {
+                MapController.GetCellFromMapBuffer(mousePosition).IsFalling = true;
+                DrawCell(mousePosition, EMaterial.OXYGEN);
             }
         }
     }

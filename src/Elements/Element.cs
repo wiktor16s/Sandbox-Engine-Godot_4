@@ -48,14 +48,15 @@ public enum EMaterial : short
     STONE = 1,
     VACUUM = 2,
     WATER = 3,
-    UNKNOWN = 4
+    UNKNOWN = 4,
+    OXYGEN = 5
 }
 
 public enum ESubstance : short
 {
-    AIR = 0,
-    SOLID = 1,
-    FLUID = 2,
+    SOLID = 0,
+    FLUID = 1,
+    GAS = 2,
     STATIC = 3,
     VACUUM = 4
 }

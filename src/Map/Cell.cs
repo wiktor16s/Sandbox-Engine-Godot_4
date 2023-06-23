@@ -52,7 +52,7 @@ public class Cell
         var thisCellIsDiffMaterialThanTargetCell = targetCell.Material != Material;
         return isThisCellMoreDense && thisCellIsDiffMaterialThanTargetCell;
     }
-    
+
     public bool CheckIsTargetIsOccupied(Vector2I targetPosition)
     {
         if (!MapController.InBounds(targetPosition.X, targetPosition.Y))
@@ -75,6 +75,9 @@ public class Cell
                 break;
             case EMaterial.VACUUM:
                 MaterialPool.Vacuum.Update(this);
+                break;
+            case EMaterial.OXYGEN:
+                MaterialPool.Oxygen.Update(this);
                 break;
         }
     }
@@ -160,7 +163,7 @@ public class Cell
 
     private bool ShouldBeUpdated()
     {
-        if (GetElement().Substance is not (ESubstance.FLUID or ESubstance.AIR
+        if (GetElement().Substance is not (ESubstance.FLUID or ESubstance.GAS
             or ESubstance.SOLID))
             return false;
 
@@ -171,7 +174,16 @@ public class Cell
 
     public void ApplyGravity()
     {
-        Velocity += Vector2.Down;
+        switch (GetElement().Substance)
+        {
+            case ESubstance.SOLID:
+            case ESubstance.FLUID:
+                Velocity += Vector2.Down;
+                break;
+            case ESubstance.GAS:
+                Velocity += Vector2.Up;
+                break;
+        }
     }
 
     public void ApplyAirResistance()
@@ -181,7 +193,6 @@ public class Cell
 
     public void HandleBounce()
     {
-        //Velocity.Y *= -GetProperties().Bounciness;
         if (Math.Abs(Velocity.Y * -GetProperties().Bounciness) > 2)
             Velocity.Y *= -GetProperties().Bounciness;
         else
@@ -208,6 +219,7 @@ public class Cell
             {
                 // todo interact with other cell on hit
                 HandleBounce();
+                //var targetCell = MapController.GetCellFromMapBuffer(pos);
                 break;
             }
 
@@ -221,45 +233,81 @@ public class Cell
             var canMoveRightDiagonal = CheckIsTargetPositionIsOccupiable(rightDiagonal);
 
             if ((canMoveLeftDiagonal || canMoveRightDiagonal) && GD.Randf() > GetProperties().Flowability &&
-                CheckIsTargetIsOccupied(ConstPosition + Vector2I.Down)) // if dół
+                CheckIsTargetIsOccupied(ConstPosition + Vector2I.Down)) // if down cell is occupied (cannot fall)
             {
                 canMoveLeftDiagonal = false;
                 canMoveRightDiagonal = false;
             }
 
             if (canMoveLeftDiagonal && canMoveRightDiagonal)
+            {
                 finalPosition = Utils.GetRandomBool() ? leftDiagonal : rightDiagonal;
+            }
             else if (canMoveLeftDiagonal)
+            {
                 finalPosition = leftDiagonal;
+            }
             else if (canMoveRightDiagonal)
+            {
                 finalPosition = rightDiagonal;
+            }
+            // todo Liquid flow
+            else if (GetElement().Substance is ESubstance.FLUID or ESubstance.GAS)
+            {
+                var left = ConstPosition + Vector2I.Left;
+                var right = ConstPosition + Vector2I.Right;
+                var canMoveLeft = true;
+                var canMoveRight = true;
+                var canFallLeftDown = false;
+                var canFallRightDown = false;
+
+                for (var i = 0; i < (int)GetProperties().Flowability; i++)
+                {
+                    if (canFallLeftDown && canFallRightDown)
+                    {
+                        finalPosition = Utils.GetRandomBool() ? left + Vector2I.Down : right + Vector2I.Down;
+                        break;
+                    }
+
+                    if (canFallLeftDown)
+                    {
+                        finalPosition = left + Vector2I.Down;
+                        break;
+                    }
+
+                    if (canFallRightDown)
+                    {
+                        finalPosition = right + Vector2I.Down;
+                        break;
+                    }
+
+                    if (canMoveLeft)
+                    {
+                        left.X -= i;
+                        canMoveLeft = CheckIsTargetPositionIsOccupiable(left);
+                        if (canMoveLeft) canFallLeftDown = CheckIsTargetIsOccupied(left + Vector2I.Down);
+                    }
+
+                    if (canMoveRight)
+                    {
+                        right.X += i;
+                        canMoveRight = CheckIsTargetPositionIsOccupiable(right);
+                        if (canMoveRight) canFallRightDown = CheckIsTargetIsOccupied(right + Vector2I.Down);
+                    }
+                }
+
+                if (canMoveLeft && canMoveRight)
+                    finalPosition = Utils.GetRandomBool() ? left : right;
+                else if (canMoveLeft)
+                    finalPosition = left;
+                else if (canMoveRight) finalPosition = right;
+            }
             else
+            {
                 IsFalling = false;
+            }
         }
 
         if (finalPosition != ConstPosition) Swap(finalPosition);
     }
 }
-// abcdefghijklmno
-/*
- *     // if substance is air or fluid
-                if (GetElement().Substance is ESubstance.AIR or ESubstance.FLUID)
-                {
-                    var left = ConstPosition + new Vector2I(-1, 0);
-                    var right = ConstPosition + new Vector2I(1, 0);
-
-                    var canMoveLeft = CheckIsTargetPositionIsOccupiable(left);
-                    var canMoveRight = CheckIsTargetPositionIsOccupiable(right);
-
-                    if (canMoveLeft && canMoveRight)
-                        finalPosition = Utils.GetRandomBool() ? left : right;
-                    else if (canMoveLeft)
-                        finalPosition = left;
-                    else if (canMoveRight) finalPosition = right;
-                }
-                else
-                {
-                    IsFalling = false;
-                    return;
-                }
- */
