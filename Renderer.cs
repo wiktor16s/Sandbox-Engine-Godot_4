@@ -1,5 +1,5 @@
+using System;
 using Godot;
-using SandboxEngine.Controllers;
 using SandboxEngine.Elements;
 using SandboxEngine.Map;
 
@@ -7,114 +7,44 @@ namespace SandboxEngine;
 
 public partial class Renderer : Sprite2D
 {
-    public static Image _mapImage;
-    public static ImageTexture _mapTexture;
-    public int Height;
-    public int Width;
+    public Cell[]       _mapBuffer;  // array of cells todo move to self controller (performance impact)
+    public Image        _mapImage;   // blob of image data
+    public ImageTexture _mapTexture; // texture of image data
+
+    public Vector2I _rendererIndex;
+    public bool     IsActive = true;
+    public Vector2I Position;
 
     private void LoadMapFromTexture()
     {
-        _mapImage = Texture.GetImage();
+        _mapImage   = Texture.GetImage();
         _mapTexture = ImageTexture.CreateFromImage(_mapImage);
-        Width = _mapImage.GetWidth();
-        Height = _mapImage.GetHeight();
-
-        MapController.Init(Width, Height);
-        MapController.CopyImageToMap(_mapImage);
-    }
-
-    public static EMaterial GetMaterialByColor(Color color)
-    {
-        var colorI = color.ToRgba32();
-        switch (colorI)
-        {
-            case (uint)EColors.YELLOW:
-                return MaterialPool.Sand.Material;
-            case (uint)EColors.BLUE:
-                return MaterialPool.Water.Material;
-            default:
-                return MaterialPool.Vacuum.Material;
-        }
-    }
-
-    public static Color GetColorByMaterial(EMaterial material, bool isDebug = false)
-    {
-        if (isDebug) return new Color(255, 0, 255);
-
-        switch (material)
-        {
-            case EMaterial.SAND:
-            {
-                return Utils.Darken(MaterialPool.Sand.Color, 100);
-            }
-
-            case EMaterial.WATER:
-            {
-                var LessB = GD.Randi() % 50;
-                var MoreRG = GD.Randi() % 50;
-
-                var newColor = new Color(
-                    (MaterialPool.Water.Color.R + MoreRG) / 255,
-                    (MaterialPool.Water.Color.G + MoreRG) / 255,
-                    (MaterialPool.Water.Color.B - LessB) / 255
-                );
-
-                return newColor;
-            }
-
-            case EMaterial.VACUUM:
-                return MaterialPool.Vacuum.Color;
-            default:
-                return new Color(255, 0, 255);
-        }
+        CopyImageToMap(_mapImage, this);
     }
 
 
-    public static void DrawCell(Vector2I position, EMaterial material)
+    public void DrawCell(Vector2I position, EMaterial material)
     {
-        var cell = MapController.GetCellFromMapBuffer(position.X, position.Y);
+        var cell = GetCellFromMapBuffer(position);
         cell.SetMaterial(material);
-        _mapImage.SetPixelv(position, GetColorByMaterial(material));
+        _mapImage.SetPixelv(position, RenderManager.GetColorByMaterial(material));
     }
 
-    //! System Overrides
-
-    public void UpdateMouseButtons()
-    {
-        if (Input.IsMouseButtonPressed(MouseButton.Left))
-        {
-            var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
-            if (MapController.InBounds(mousePosition.X, mousePosition.Y))
-            {
-                MapController.GetCellFromMapBuffer(mousePosition).IsFalling = true;
-                DrawCell(mousePosition, EMaterial.SAND);
-            }
-        }
-
-        if (Input.IsMouseButtonPressed(MouseButton.Right))
-        {
-            var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
-            if (MapController.InBounds(mousePosition.X, mousePosition.Y))
-            {
-                MapController.GetCellFromMapBuffer(mousePosition).IsFalling = true;
-                DrawCell(mousePosition, EMaterial.WATER);
-            }
-        }
-
-        if (Input.IsMouseButtonPressed(MouseButton.Middle))
-        {
-            var mousePosition = (Vector2I)GetViewport().GetMousePosition().Floor();
-            if (MapController.InBounds(mousePosition.X, mousePosition.Y))
-            {
-                MapController.GetCellFromMapBuffer(mousePosition).IsFalling = true;
-                DrawCell(mousePosition, EMaterial.OXYGEN);
-            }
-        }
-    }
 
     public override void _Ready()
     {
         Engine.MaxFps = Globals.MaxFps;
+// init map buffer
+        _mapBuffer = new Cell[Globals.MapChunkHeight * Globals.MapChunkWidth];
+
+        for (var i = 0; i < _mapBuffer.Length; i++)
+        {
+            var position = ComputePosition(i, Globals.MapChunkWidth);
+            _mapBuffer[i] = new Cell(position.X, position.Y, this);
+        }
+// end of init map buffer
+
+
         LoadMapFromTexture();
     }
 
@@ -125,18 +55,88 @@ public partial class Renderer : Sprite2D
 
     public override void _Process(double delta)
     {
-        MapController.UpdateAll();
-        _mapTexture.Update(_mapImage);
-        Texture = _mapTexture;
-        UpdateMouseButtons();
+        if (!IsActive)
+        {
+        }
     }
-}
 
-public enum EColors : uint
-{
-    YELLOW = 4294902015,
-    WHITE = 4294967295,
-    BLACK = 255,
-    BLUE = 65535,
-    RED = 4278190335
+    public void CopyImageToMap(Image imageTexture, Renderer renderer)
+    {
+        for (var i = 0; i < renderer._mapBuffer.Length; i++)
+        {
+            var coords = ComputePosition(i, Globals.MapChunkWidth);
+            var color  = imageTexture.GetPixel(coords.X, coords.Y);
+            renderer._mapBuffer[i].SetMaterial(RenderManager.GetMaterialByColor(color));
+        }
+    }
+
+    public static int ComputeIndex(Vector2I cellPosition)
+    {
+        return cellPosition.Y * Globals.MapChunkWidth + cellPosition.X;
+    }
+
+    public Vector2I ComputePosition(int index, int width)
+    {
+        return new Vector2I(
+            index % width,
+            index / width
+        );
+    }
+
+    public bool InBounds(Vector2I position)
+    {
+        // var chunkWidth  = Globals.MapChunkWidth  * Globals.RendererScale;
+        // var chunkHeight = Globals.MapChunkHeight * Globals.RendererScale;
+        // var chunkIndexX = _rendererIndex.X;
+        // var chunkIndexY = _rendererIndex.Y;
+        // return position.X >= chunkIndexX      * chunkWidth  &&
+        //        position.X < (chunkIndexX + 1) * chunkWidth  &&
+        //        position.Y >= chunkIndexY      * chunkHeight &&
+        //        position.Y < (chunkIndexY + 1) * chunkHeight;
+        return position.X >= 0                    &&
+               position.X < Globals.MapChunkWidth &&
+               position.Y >= 0                    &&
+               position.Y < Globals.MapChunkHeight;
+    }
+
+    public Vector2I NormalizePosition(Vector2I position)
+    {
+        if (position.Y > Globals.MapChunkHeight - 1)
+        {
+            position.Y = Globals.MapChunkHeight - 1;
+        }
+
+        if (position.Y < 0)
+        {
+            position.Y = 0;
+        }
+
+        return position;
+    }
+
+    public Cell GetCellFromMapBuffer(Vector2I cellPosition)
+    {
+        if (!InBounds(cellPosition)) throw new ArgumentException("Trying to reach out of bounds " + cellPosition);
+        try
+        {
+            return _mapBuffer[ComputeIndex(cellPosition)];
+        }
+        catch (Exception e)
+        {
+            GD.Print(e);
+            GD.Print(cellPosition);
+            throw;
+        }
+    }
+
+    public void UpdateAll()
+    {
+        for (var i = 0; i < Globals.MapChunkHeight; i++)
+            if (i % 2 == 0)
+                for (var j = 0; j < Globals.MapChunkWidth; j++)
+                    _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
+            else
+                for (var j = Globals.MapChunkWidth - 1; j > 0; j--)
+                    _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
+    }
 }

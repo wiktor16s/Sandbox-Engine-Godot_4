@@ -6,8 +6,8 @@ namespace SandboxEngine.Elements.Gas;
 public class Oxygen : Element
 {
     public Oxygen(
-        EMaterial material,
-        Color color,
+        EMaterial  material,
+        Color      color,
         Properties properties
     ) : base(material, ESubstance.FLUID, color, properties)
     {

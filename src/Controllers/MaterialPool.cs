@@ -1,6 +1,7 @@
 using System;
 using Godot;
 using SandboxEngine.Elements;
+using SandboxEngine.Elements.Gas;
 using SandboxEngine.Elements.Liquid;
 using SandboxEngine.Elements.None;
 using SandboxEngine.Elements.Solid.Movable;
@@ -29,7 +30,8 @@ public static class MaterialPool
         new Color(0, 0, 255),
         new Properties(0.4f, 0f, 0.2f, 4f, 0f, 0f, EMaterial.WATER, EMaterial.WATER)
     );
-    public static readonly Water Oxygen = new(
+
+    public static readonly Oxygen Oxygen = new(
         EMaterial.OXYGEN,
         new Color(220, 240, 255),
         new Properties(0.1f, 0f, 0.1f, 4f, 0f, 0f, EMaterial.OXYGEN, EMaterial.OXYGEN)
@@ -39,11 +41,11 @@ public static class MaterialPool
     {
         return material switch
         {
-            EMaterial.SAND => Sand,
+            EMaterial.SAND   => Sand,
             EMaterial.VACUUM => Vacuum,
-            EMaterial.WATER => Water,
+            EMaterial.WATER  => Water,
             EMaterial.OXYGEN => Oxygen,
-            _ => throw new ArgumentOutOfRangeException(nameof(material), material, null)
+            _                => throw new ArgumentOutOfRangeException(nameof(material), material, null)
         };
     }
 }

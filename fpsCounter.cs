@@ -3,9 +3,9 @@ using SandboxEngine;
 
 public partial class fpsCounter : Label
 {
-    private int AmountOfMeasures;
+    private int  AmountOfMeasures;
     private long AvgFps;
-    private int LastFpsMeasure;
+    private int  LastFpsMeasure;
     private long SumOfMeasures;
 
     // Called when the node enters the scene tree for the first time.
@@ -24,7 +24,7 @@ public partial class fpsCounter : Label
             SumOfMeasures += LastFpsMeasure;
 
             AvgFps = SumOfMeasures / AmountOfMeasures;
-            Text = $"{Engine.GetFramesPerSecond()} \n avg: {AvgFps}";   
+            Text   = $"{Engine.GetFramesPerSecond()} \n avg: {AvgFps}";
         }
     }
 }

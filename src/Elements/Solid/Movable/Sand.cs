@@ -6,8 +6,8 @@ namespace SandboxEngine.Elements.Solid.Movable;
 public class Sand : Element
 {
     public Sand(
-        EMaterial material,
-        Color color,
+        EMaterial  material,
+        Color      color,
         Properties properties
     ) : base(material, ESubstance.SOLID, color, properties)
     {

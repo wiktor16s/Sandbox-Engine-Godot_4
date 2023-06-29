@@ -7,22 +7,24 @@ namespace SandboxEngine.Map;
 
 public class Cell
 {
-    public readonly Vector2I ConstPosition;
-    public bool IsFalling;
-    public bool LastUpdatedInTick;
-    public uint Lifetime;
-    public EMaterial Material;
-    public int Temperature;
-    public Vector2 Velocity;
+    public readonly Vector2I  ConstPosition;
+    public          bool      IsFalling;
+    public          bool      LastUpdatedInTick;
+    public          uint      Lifetime;
+    public          EMaterial Material;
+    public          Renderer  ParentRenderer;
+    public          int       Temperature;
+    public          Vector2   Velocity;
 
-    public Cell(int x, int y)
+    public Cell(int x, int y, Renderer parentRenderer)
     {
-        Material = EMaterial.VACUUM;
-        ConstPosition = new Vector2I(x, y);
-        Temperature = 0;
-        Lifetime = 0;
-        LastUpdatedInTick = Globals.tickOscillator;
-        IsFalling = false;
+        Material          = EMaterial.VACUUM;
+        ConstPosition     = new Vector2I(x, y);
+        Temperature       = 0;
+        Lifetime          = 0;
+        LastUpdatedInTick = Globals.TickOscillator;
+        IsFalling         = false;
+        ParentRenderer    = parentRenderer;
 
         // 🟦🟩🟨⬛️
     }
@@ -44,27 +46,26 @@ public class Cell
 
     public bool CheckIsTargetPositionIsOccupiable(Vector2I targetPosition)
     {
-        if (!MapController.InBounds(targetPosition.X, targetPosition.Y))
-            return false;
-        var targetCell = MapController.GetCellFromMapBuffer(targetPosition.X, targetPosition.Y);
-        var isThisCellMoreDense = targetCell.GetProperties().Density <
-                                  GetProperties().Density;
-        var thisCellIsDiffMaterialThanTargetCell = targetCell.Material != Material;
+        if (!ParentRenderer.InBounds(targetPosition)) return false;
+        var targetCell                           = ParentRenderer.GetCellFromMapBuffer(targetPosition);
+        var isThisCellMoreDense                  = targetCell.GetProperties().Density < GetProperties().Density;
+        var thisCellIsDiffMaterialThanTargetCell = targetCell.Material                != Material;
         return isThisCellMoreDense && thisCellIsDiffMaterialThanTargetCell;
     }
 
     public bool CheckIsTargetIsOccupied(Vector2I targetPosition)
     {
-        if (!MapController.InBounds(targetPosition.X, targetPosition.Y))
-            return false;
-        var targetCell = MapController.GetCellFromMapBuffer(targetPosition.X, targetPosition.Y);
+        if (!ParentRenderer.InBounds(targetPosition)) return false;
+
+        var targetCell = ParentRenderer.GetCellFromMapBuffer(targetPosition);
         return targetCell.Material != EMaterial.VACUUM; //todo fix for gases
     }
 
 
     public void Update(float tickDeltaTime)
     {
-        if (LastUpdatedInTick == Globals.tickOscillator) return;
+        if (LastUpdatedInTick == Globals.TickOscillator) return;
+
         switch (Material)
         {
             case EMaterial.SAND:
@@ -82,45 +83,40 @@ public class Cell
         }
     }
 
-    public void Swap(int x, int y)
+    public void Swap(Vector2I destinationPosition, Renderer destinationRenderer)
     {
-        var destinationCell = MapController.GetCellFromMapBuffer(x, y);
-        var tempMaterial = Material;
-        var tempLifetime = Lifetime;
-        var tempVelocity = Velocity;
-        var tempTemperature = Temperature;
+        var destinationCell       = destinationRenderer.GetCellFromMapBuffer(destinationPosition);
+        var tempMaterial          = Material;
+        var tempLifetime          = Lifetime;
+        var tempVelocity          = Velocity;
+        var tempTemperature       = Temperature;
         var tempLastUpdatedInTick = LastUpdatedInTick;
-        var tempIsFalling = IsFalling;
+        var tempIsFalling         = IsFalling;
 
-        Material = destinationCell.Material;
-        Lifetime = destinationCell.Lifetime;
-        Velocity = destinationCell.Velocity;
-        Temperature = destinationCell.Temperature;
+        Material          = destinationCell.Material;
+        Lifetime          = destinationCell.Lifetime;
+        Velocity          = destinationCell.Velocity;
+        Temperature       = destinationCell.Temperature;
         LastUpdatedInTick = destinationCell.LastUpdatedInTick;
-        IsFalling = destinationCell.IsFalling;
+        IsFalling         = destinationCell.IsFalling;
 
-        destinationCell.Material = tempMaterial;
-        destinationCell.Lifetime = tempLifetime;
-        destinationCell.Velocity = tempVelocity;
-        destinationCell.Temperature = tempTemperature;
+        destinationCell.Material          = tempMaterial;
+        destinationCell.Lifetime          = tempLifetime;
+        destinationCell.Velocity          = tempVelocity;
+        destinationCell.Temperature       = tempTemperature;
         destinationCell.LastUpdatedInTick = tempLastUpdatedInTick;
-        destinationCell.IsFalling = tempIsFalling;
+        destinationCell.IsFalling         = tempIsFalling;
 
         SetIsFallingOnPath(ConstPosition, destinationCell.ConstPosition);
 
-        Renderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
-        Renderer.DrawCell(ConstPosition, Material); // draw in new position
-    }
-
-    public void Swap(Vector2I position)
-    {
-        Swap(position.X, position.Y);
+        ParentRenderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
+        ParentRenderer.DrawCell(ConstPosition,                 Material);                 // draw in new position
     }
 
     public void SetIsFallingOnPath(Vector2I pos1, Vector2I pos2)
     {
         //todo optimalize this for god sake...!
-        var path = Utils.GetShortestPathBetweenTwoCells(pos1, pos2);
+        var path = Utils.GetShortestPathBetweenTwoCells(pos1, pos2, ParentRenderer);
         foreach (var position in path)
         {
             SetIsFallingAroundPosition(pos1);
@@ -131,9 +127,9 @@ public class Cell
 
     public void SetIsFallingInSpecificPosition(Vector2I position)
     {
-        if (MapController.InBounds(position))
+        if (ParentRenderer.InBounds(position))
         {
-            var cellUp = MapController.GetCellFromMapBuffer(position);
+            var cellUp = ParentRenderer.GetCellFromMapBuffer(position);
             if (MaterialPool.GetByMaterial(cellUp.Material).Substance is not ESubstance.VACUUM) cellUp.IsFalling = true;
         }
     }
@@ -151,16 +147,6 @@ public class Cell
         // SetIsFallingInSpecificPosition(position + Vector2I.Down + Vector2I.Left);
     }
 
-    private void SetDefaults()
-    {
-        Material = MaterialPool.Vacuum.Material;
-        Lifetime = 0;
-        Velocity = Vector2I.Zero;
-        LastUpdatedInTick = !Globals.tickOscillator;
-
-        Renderer.DrawCell(new Vector2I(ConstPosition.X, ConstPosition.Y), MaterialPool.Vacuum.Material);
-    }
-
     private bool ShouldBeUpdated()
     {
         if (GetElement().Substance is not (ESubstance.FLUID or ESubstance.GAS
@@ -168,6 +154,7 @@ public class Cell
             return false;
 
         if (!IsFalling) return false;
+
         return true;
     }
 
@@ -202,11 +189,11 @@ public class Cell
     public void Move()
     {
         if (!ShouldBeUpdated()) return;
-        LastUpdatedInTick = Globals.tickOscillator;
+        LastUpdatedInTick = Globals.TickOscillator;
 
         ApplyGravity();
         ApplyAirResistance();
-        var path = Utils.GetShortestPathBetweenTwoCells(ConstPosition, ConstPosition + (Vector2I)Velocity);
+        var path = Utils.GetShortestPathBetweenTwoCells(ConstPosition, ConstPosition + (Vector2I)Velocity, ParentRenderer);
 
         var finalPosition = ConstPosition;
 
@@ -219,23 +206,22 @@ public class Cell
             {
                 // todo interact with other cell on hit
                 HandleBounce();
-                //var targetCell = MapController.GetCellFromMapBuffer(pos);
                 break;
             }
 
 
         if (finalPosition == ConstPosition && IsFalling)
         {
-            var leftDiagonal = ConstPosition + new Vector2I(-1, 1);
-            var rightDiagonal = ConstPosition + new Vector2I(1, 1);
+            var leftDiagonal  = ConstPosition + new Vector2I(-1, 1);
+            var rightDiagonal = ConstPosition + new Vector2I(1,  1);
 
-            var canMoveLeftDiagonal = CheckIsTargetPositionIsOccupiable(leftDiagonal);
+            var canMoveLeftDiagonal  = CheckIsTargetPositionIsOccupiable(leftDiagonal);
             var canMoveRightDiagonal = CheckIsTargetPositionIsOccupiable(rightDiagonal);
 
             if ((canMoveLeftDiagonal || canMoveRightDiagonal) && GD.Randf() > GetProperties().Flowability &&
                 CheckIsTargetIsOccupied(ConstPosition + Vector2I.Down)) // if down cell is occupied (cannot fall)
             {
-                canMoveLeftDiagonal = false;
+                canMoveLeftDiagonal  = false;
                 canMoveRightDiagonal = false;
             }
 
@@ -254,11 +240,11 @@ public class Cell
             // todo Liquid flow
             else if (GetElement().Substance is ESubstance.FLUID or ESubstance.GAS)
             {
-                var left = ConstPosition + Vector2I.Left;
-                var right = ConstPosition + Vector2I.Right;
-                var canMoveLeft = true;
-                var canMoveRight = true;
-                var canFallLeftDown = false;
+                var left             = ConstPosition + Vector2I.Left;
+                var right            = ConstPosition + Vector2I.Right;
+                var canMoveLeft      = true;
+                var canMoveRight     = true;
+                var canFallLeftDown  = false;
                 var canFallRightDown = false;
 
                 for (var i = 0; i < (int)GetProperties().Flowability; i++)
@@ -283,15 +269,15 @@ public class Cell
 
                     if (canMoveLeft)
                     {
-                        left.X -= i;
-                        canMoveLeft = CheckIsTargetPositionIsOccupiable(left);
+                        left.X      -= i;
+                        canMoveLeft =  CheckIsTargetPositionIsOccupiable(left);
                         if (canMoveLeft) canFallLeftDown = CheckIsTargetIsOccupied(left + Vector2I.Down);
                     }
 
                     if (canMoveRight)
                     {
-                        right.X += i;
-                        canMoveRight = CheckIsTargetPositionIsOccupiable(right);
+                        right.X      += i;
+                        canMoveRight =  CheckIsTargetPositionIsOccupiable(right);
                         if (canMoveRight) canFallRightDown = CheckIsTargetIsOccupied(right + Vector2I.Down);
                     }
                 }
@@ -299,7 +285,7 @@ public class Cell
                 if (canMoveLeft && canMoveRight)
                     finalPosition = Utils.GetRandomBool() ? left : right;
                 else if (canMoveLeft)
-                    finalPosition = left;
+                    finalPosition                    = left;
                 else if (canMoveRight) finalPosition = right;
             }
             else
@@ -308,6 +294,9 @@ public class Cell
             }
         }
 
-        if (finalPosition != ConstPosition) Swap(finalPosition);
+        if (finalPosition != ConstPosition)
+        {
+            Swap(finalPosition, ParentRenderer); // todo
+        }
     }
 }

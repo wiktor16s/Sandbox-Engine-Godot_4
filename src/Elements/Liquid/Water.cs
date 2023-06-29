@@ -6,8 +6,8 @@ namespace SandboxEngine.Elements.Liquid;
 public class Water : Element
 {
     public Water(
-        EMaterial material,
-        Color color,
+        EMaterial  material,
+        Color      color,
         Properties properties
     ) : base(material, ESubstance.FLUID, color, properties)
     {
