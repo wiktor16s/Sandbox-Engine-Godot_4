@@ -9,7 +9,7 @@ public class Program
 
     public static string IntToRoman(int num)
     {
-        var rest = 0;
+        var rest   = 0;
         var result = "";
 
         while (num > 0)
@@ -17,17 +17,17 @@ public class Program
             var leading = Utils.GetLeadingPartOfNumber(num);
             rest = Utils.GetRemainingPartOfNumber(num);
             Console.WriteLine("default: " + num);
-            Console.WriteLine("lean " + leading);
-            Console.WriteLine("rest " + rest);
+            Console.WriteLine("lean "     + leading);
+            Console.WriteLine("rest "     + rest);
 
             if (leading == 0)
             {
                 Console.WriteLine("lean is 0");
                 leading = rest;
-                rest = 0;
+                rest    = 0;
             }
 
-            var highest = Utils.GetHighestValFromRange(leading);
+            var highest   = Utils.GetHighestValFromRange(leading);
             var multipler = leading / highest;
             Console.WriteLine("high " + highest);
             Console.WriteLine("mult " + multipler);
@@ -36,7 +36,7 @@ public class Program
                 result += Utils.GetRomanByInt(highest);
             }
 
-            num = leading - highest * Math.Max(multipler, 1) + rest;
+            num  = leading - highest * Math.Max(multipler, 1) + rest;
             rest = 0;
 
             Console.WriteLine("num " + num);
@@ -51,19 +51,19 @@ public static class Utils
 {
     public enum RomanToIntMap
     {
-        I = 1,
+        I  = 1,
         IV = 4,
-        V = 5,
+        V  = 5,
         IX = 9,
-        X = 10,
+        X  = 10,
         XL = 40,
-        L = 50,
+        L  = 50,
         XC = 90,
-        C = 100,
+        C  = 100,
         CD = 400,
-        D = 500,
+        D  = 500,
         CM = 900,
-        M = 1000
+        M  = 1000
     }
 
     public static int GetHighestValFromRange(int num)

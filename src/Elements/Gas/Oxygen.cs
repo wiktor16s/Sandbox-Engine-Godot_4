@@ -1,11 +1,11 @@
 using Godot;
 using SandboxEngine.Map;
 
-namespace SandboxEngine.Elements.Liquid;
+namespace SandboxEngine.Elements.Gas;
 
-public class Water : Element
+public class Oxygen : Element
 {
-    public Water(
+    public Oxygen(
         EMaterial  material,
         Color      color,
         Properties properties
