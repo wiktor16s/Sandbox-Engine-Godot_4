@@ -22,7 +22,7 @@ public class Cell
         ConstPosition     = new Vector2I(x, y);
         Temperature       = 0;
         Lifetime          = 0;
-        LastUpdatedInTick = Globals.TickOscillator;
+        LastUpdatedInTick = true;
         IsFalling         = false;
         ParentRenderer    = parentRenderer;
 
@@ -46,8 +46,21 @@ public class Cell
 
     public bool CheckIsTargetPositionIsOccupiable(Vector2I targetPosition)
     {
-        if (!ParentRenderer.InBounds(targetPosition)) return false;
-        var targetCell                           = ParentRenderer.GetCellFromMapBuffer(targetPosition);
+        var renderer = ParentRenderer;
+        var position = targetPosition;
+
+        if (!RenderManager.IsPositionInAnyChunkBound(ParentRenderer, position))
+        {
+            return false;
+        }
+
+        if (!ParentRenderer.InBounds(position))
+        {
+            renderer = RenderManager.GetRendererByRelativePosition(position, ParentRenderer);
+            position = RenderManager.GetOffsetOfRelativePosition(position);
+        }
+
+        var targetCell                           = renderer.GetCellFromMapBuffer(position);
         var isThisCellMoreDense                  = targetCell.GetProperties().Density < GetProperties().Density;
         var thisCellIsDiffMaterialThanTargetCell = targetCell.Material                != Material;
         return isThisCellMoreDense && thisCellIsDiffMaterialThanTargetCell;
@@ -64,8 +77,7 @@ public class Cell
 
     public void Update(float tickDeltaTime)
     {
-        if (LastUpdatedInTick == Globals.TickOscillator) return;
-
+        if (LastUpdatedInTick == ParentRenderer.LocalTickOscilator) return;
         switch (Material)
         {
             case EMaterial.SAND:
@@ -83,9 +95,9 @@ public class Cell
         }
     }
 
-    public void Swap(Vector2I destinationPosition, Renderer destinationRenderer)
+    public void Swap(Vector2I destinationPosition)
     {
-        var destinationCell       = destinationRenderer.GetCellFromMapBuffer(destinationPosition);
+        var destinationCell       = ParentRenderer.GetCellFromMapBuffer(destinationPosition);
         var tempMaterial          = Material;
         var tempLifetime          = Lifetime;
         var tempVelocity          = Velocity;
@@ -107,44 +119,10 @@ public class Cell
         destinationCell.LastUpdatedInTick = tempLastUpdatedInTick;
         destinationCell.IsFalling         = tempIsFalling;
 
-        SetIsFallingOnPath(ConstPosition, destinationCell.ConstPosition);
+        ParentRenderer.SetIsFallingOnPath(ConstPosition, destinationPosition);
 
-        ParentRenderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
-        ParentRenderer.DrawCell(ConstPosition,                 Material);                 // draw in new position
-    }
-
-    public void SetIsFallingOnPath(Vector2I pos1, Vector2I pos2)
-    {
-        //todo optimalize this for god sake...!
-        var path = Utils.GetShortestPathBetweenTwoCells(pos1, pos2, ParentRenderer);
-        foreach (var position in path)
-        {
-            SetIsFallingAroundPosition(pos1);
-            SetIsFallingAroundPosition(position);
-            SetIsFallingAroundPosition(pos2);
-        }
-    }
-
-    public void SetIsFallingInSpecificPosition(Vector2I position)
-    {
-        if (ParentRenderer.InBounds(position))
-        {
-            var cellUp = ParentRenderer.GetCellFromMapBuffer(position);
-            if (MaterialPool.GetByMaterial(cellUp.Material).Substance is not ESubstance.VACUUM) cellUp.IsFalling = true;
-        }
-    }
-
-    public void SetIsFallingAroundPosition(Vector2I position)
-    {
-        SetIsFallingInSpecificPosition(position + Vector2I.Up);
-        SetIsFallingInSpecificPosition(position + Vector2I.Down);
-        SetIsFallingInSpecificPosition(position + Vector2I.Left);
-        SetIsFallingInSpecificPosition(position + Vector2I.Right);
-
-        // SetIsFallingInSpecificPosition(position + Vector2I.Up + Vector2I.Right);
-        // SetIsFallingInSpecificPosition(position + Vector2I.Up + Vector2I.Left);
-        // SetIsFallingInSpecificPosition(position + Vector2I.Down + Vector2I.Right);
-        // SetIsFallingInSpecificPosition(position + Vector2I.Down + Vector2I.Left);
+        destinationCell.ParentRenderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
+        ParentRenderer.DrawCell(ConstPosition, Material);                                                 // draw in new position
     }
 
     private bool ShouldBeUpdated()
@@ -189,7 +167,7 @@ public class Cell
     public void Move()
     {
         if (!ShouldBeUpdated()) return;
-        LastUpdatedInTick = Globals.TickOscillator;
+        LastUpdatedInTick = ParentRenderer.LocalTickOscilator;
 
         ApplyGravity();
         ApplyAirResistance();
@@ -198,9 +176,16 @@ public class Cell
         var finalPosition = ConstPosition;
 
         foreach (var pos in path)
-            if (CheckIsTargetPositionIsOccupiable(pos))
+        {
+            var fixedPosition = pos;
+            if (!RenderManager.IsPositionInAnyChunkBound(ParentRenderer, pos))
             {
-                finalPosition = pos;
+                fixedPosition = RenderManager.NormalizePositionIfNotInAnyChunkBound(ParentRenderer, pos);
+            }
+
+            if (CheckIsTargetPositionIsOccupiable(fixedPosition))
+            {
+                finalPosition = fixedPosition;
             }
             else
             {
@@ -208,6 +193,7 @@ public class Cell
                 HandleBounce();
                 break;
             }
+        }
 
 
         if (finalPosition == ConstPosition && IsFalling)
@@ -246,6 +232,10 @@ public class Cell
                 var canMoveRight     = true;
                 var canFallLeftDown  = false;
                 var canFallRightDown = false;
+
+
+                // todo Check fluids... it smells bad : /
+                // todo SetIsFallingAroundPosition for liquids 
 
                 for (var i = 0; i < (int)GetProperties().Flowability; i++)
                 {
@@ -296,7 +286,7 @@ public class Cell
 
         if (finalPosition != ConstPosition)
         {
-            Swap(finalPosition, ParentRenderer); // todo
+            Swap(finalPosition);
         }
     }
 }

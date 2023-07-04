@@ -29,7 +29,8 @@ public partial class RenderManager : Node
                 renderer.GlobalPosition = renderer.Position;
                 GD.Print($"x: {renderer.Position.X} y: {renderer.Position.Y}");
 
-                renderer.Texture   = ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{GetChildren().Count}.bmp"));
+                renderer.Texture = ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{GetChildren().Count}.bmp"));
+                //renderer.Texture   = ImageTexture.CreateFromImage(Image.LoadFromFile("res://assets/5x5.bmp"));
                 renderer.Scale     = new Vector2I(Globals.RendererScale, Globals.RendererScale);
                 renderer.Name      = $"Renderer_{ComputeIndex(x, y)}";
                 RenderChunks[x][y] = renderer;
@@ -41,13 +42,12 @@ public partial class RenderManager : Node
 
     public override void _Process(double delta)
     {
-        Globals.TickOscillator = !Globals.TickOscillator;
-
         InputManager.UpdateMouseButtons(GetViewport());
         foreach (var yChunks in RenderChunks)
         {
             foreach (var xChunk in yChunks)
             {
+                if (!xChunk.IsActive) break;
                 xChunk.UpdateAll();
                 xChunk._mapTexture.Update(xChunk._mapImage);
                 xChunk.Texture = xChunk._mapTexture;
@@ -62,25 +62,109 @@ public partial class RenderManager : Node
 
     public static Renderer GetRendererBy2dIndex(Vector2I position)
     {
-        if (position.X > Globals.GridWidth) throw new IndexOutOfRangeException("X Index of renderer is ot of range Globals GridWidth");
-
-        if (position.Y > Globals.GridHeight) throw new IndexOutOfRangeException("Y Index of renderer is ot of range Globals GridHeight");
+        if (position.X >= Globals.GridWidth) throw new IndexOutOfRangeException("X Index of renderer is ot of range Globals GridWidth");
+        if (position.Y >= Globals.GridHeight) throw new IndexOutOfRangeException("Y Index of renderer is ot of range Globals GridHeight");
 
         return RenderChunks[position.X][position.Y];
     }
 
-    public static Vector2I GetRendererIndexByMousePosition(Vector2I mousePosition)
+    public static Vector2I GetRendererIndexByGlobalPosition(Vector2I globalPosition)
     {
         return new Vector2I(
-            (int)Math.Floor((double)(mousePosition.X / (Globals.MapChunkWidth  * Globals.RendererScale))),
-            (int)Math.Floor((double)(mousePosition.Y / (Globals.MapChunkHeight * Globals.RendererScale)))
+            (int)Math.Floor((double)(globalPosition.X / (Globals.MapChunkWidth  * Globals.RendererScale))),
+            (int)Math.Floor((double)(globalPosition.Y / (Globals.MapChunkHeight * Globals.RendererScale)))
         );
     }
 
-    public static Renderer GetRendererByMousePosition(Vector2I mousePosition)
+    public static Renderer GetRendererByRelativePosition(Vector2I position, Renderer originRenderer)
     {
-        var index = GetRendererIndexByMousePosition(mousePosition);
-        return GetRendererBy2dIndex(index);
+        try
+        {
+            var nextRendererIndex = originRenderer._rendererIndex;
+
+            if (position.X < 0) nextRendererIndex.X                       -= 1;
+            if (position.X >= Globals.MapChunkWidth) nextRendererIndex.X  += 1;
+            if (position.Y < 0) nextRendererIndex.Y                       -= 1;
+            if (position.Y >= Globals.MapChunkHeight) nextRendererIndex.Y += 1;
+
+            return GetRendererBy2dIndex(nextRendererIndex);
+        }
+        catch (IndexOutOfRangeException)
+        {
+            return null;
+        }
+    }
+
+
+    public static Vector2I GetOffsetOfRelativePosition(Vector2I position) // position from -127 -> (without 0) -> 127
+    {
+        var final = position;
+
+        if (position.X > Globals.MapChunkWidth - 1) // right 128 +
+        {
+            final.X = position.X - Globals.MapChunkWidth;
+        }
+
+        else if (position.X < 0)
+        {
+            final.X = Globals.MapChunkWidth - Math.Abs(position.X);
+        }
+
+        if (position.Y > Globals.MapChunkHeight - 1)
+        {
+            final.Y = position.Y - Globals.MapChunkHeight;
+        }
+
+        if (position.Y < 0)
+        {
+            final.Y = Globals.MapChunkHeight - Math.Abs(position.Y);
+        }
+
+        // var offsetX = 0;
+        // var offsetY = 0;
+        //
+        // if (position.X >= Globals.MapChunkWidth) // right 128 +
+        // {
+        //     offsetX = position.X - Globals.MapChunkWidth - 1;
+        // }
+        //
+        // if (position.X < 0) // left - 0
+        // {
+        //     offsetX = position.X;
+        // }
+        //
+        // if (position.Y >= Globals.MapChunkHeight)
+        // {
+        //     offsetY = position.Y - Globals.MapChunkHeight - 1;
+        // }
+        //
+        // if (position.Y < 0)
+        // {
+        //     offsetY = position.Y;
+        // }
+        //
+        // //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+        //
+        // var finalPos = position;
+        // if (offsetX < 0)
+        // {
+        //     finalPos.X = Globals.MapChunkWidth - Math.Abs(offsetX) - 1;
+        // }
+        // else if (offsetX > 0)
+        // {
+        //     finalPos.X = offsetX - 1;
+        // }
+        //
+        // if (offsetY < 0)
+        // {
+        //     finalPos.Y = Globals.MapChunkHeight - Math.Abs(offsetY) - 1;
+        // }
+        // else if (offsetY > 0)
+        // {
+        //     finalPos.Y = offsetY - 1;
+        // }
+
+        return final;
     }
 
     public static EMaterial GetMaterialByColor(Color color)
@@ -118,23 +202,46 @@ public partial class RenderManager : Node
         }
     }
 
-    public static bool isChunkOnRight(Renderer actualRenderer)
+    public static bool IsChunkInDirection(Renderer actualRenderer, Vector2I direction)
     {
-        return actualRenderer._rendererIndex.X < Globals.GridWidth - 1;
+        var nextIndex = actualRenderer._rendererIndex + direction;
+
+        return nextIndex.X >= 0 && nextIndex.X < Globals.GridWidth &&
+               nextIndex.Y >= 0 && nextIndex.Y < Globals.GridHeight;
     }
 
-    public static bool isChunkOnLeft(Renderer actualRenderer)
+    public static bool IsPositionInAnyChunkBound(Renderer originRenderer, Vector2I position)
     {
-        return actualRenderer._rendererIndex.X > 0;
+        if (originRenderer._rendererIndex.Y >= Globals.GridHeight - 1 && position.Y > Globals.MapChunkHeight - 1) return false;
+        if (originRenderer._rendererIndex.Y <= 0                      && position.Y < 0) return false;
+        if (originRenderer._rendererIndex.X >= Globals.GridWidth - 1  && position.X > Globals.MapChunkWidth - 1) return false;
+        if (originRenderer._rendererIndex.X <= 0                      && position.X < 0) return false;
+
+        return true;
     }
 
-    public static bool isChunkOnAbove(Renderer actualRenderer)
+    public static Vector2I NormalizePositionIfNotInAnyChunkBound(Renderer originRenderer, Vector2I position)
     {
-        return actualRenderer._rendererIndex.Y > 0;
-    }
+        if (originRenderer._rendererIndex.Y >= Globals.GridHeight - 1 && position.Y > Globals.MapChunkHeight - 1)
+        {
+            position.Y = Globals.MapChunkHeight - 1;
+        } // UNDER DOWN
 
-    public static bool isChunkOnBelow(Renderer actualRenderer)
-    {
-        return actualRenderer._rendererIndex.Y < Globals.GridHeight - 1;
+        if (originRenderer._rendererIndex.Y <= 0 && position.Y < 0)
+        {
+            position.Y = 0;
+        } // ABOVE UP
+
+        if (originRenderer._rendererIndex.X >= Globals.GridWidth - 1 && position.X > Globals.MapChunkWidth - 1)
+        {
+            position.X = Globals.MapChunkWidth - 1;
+        } // RIGHT OF RIGHT
+
+        if (originRenderer._rendererIndex.X <= 0 && position.X < 0)
+        {
+            position.X = 0;
+        } // LEFT OF LEFT
+
+        return position;
     }
 }

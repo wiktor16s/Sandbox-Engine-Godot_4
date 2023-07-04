@@ -16,7 +16,7 @@ public static class MaterialPool
     public static readonly Sand Sand = new(
         EMaterial.SAND,
         new Color(255, 255, 0),
-        new Properties(0.5f, 0, 0.3f, 0.5f, 1700f, -100f, EMaterial.SAND, EMaterial.SAND)
+        new Properties(0.5f, 0, 0.3f, 0.4f, 1700f, -100f, EMaterial.SAND, EMaterial.SAND)
     );
 
     public static readonly Vacuum Vacuum = new(

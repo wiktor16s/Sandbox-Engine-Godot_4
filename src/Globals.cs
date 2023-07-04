@@ -5,7 +5,7 @@ public static class Globals
     public const  float Gravitation        = 1f;
     public const  int   NeverFreezeValue   = int.MaxValue;
     public const  int   NeverBurnValue     = int.MinValue;
-    public static int   MaxFps             = 0;
+    public static int   MaxFps             = 60;
     public static bool  TickOscillator     = false;
     public static int   MapChunkWidth      = 128;
     public static int   MapChunkHeight     = 128;

@@ -40,9 +40,18 @@ public static class Utils
 
     public static Vector2I[] GetShortestPathBetweenTwoCells(Vector2I pos1, Vector2I pos2, Renderer renderer)
     {
-        if (!renderer.InBounds(pos1)) pos1 = renderer.NormalizePosition(pos1);
+        var pos2ParentRenderer = renderer;
 
-        if (!renderer.InBounds(pos2)) pos2 = renderer.NormalizePosition(pos2);
+        if (!renderer.InBounds(pos1)) pos1 = renderer.NormalizePosition(pos1);
+        if (!renderer.InBounds(pos2))
+        {
+            pos2ParentRenderer = RenderManager.GetRendererByRelativePosition(pos2, renderer);
+            if (pos2ParentRenderer is null)
+            {
+                pos2ParentRenderer = renderer;
+                pos2               = renderer.NormalizePosition(pos2);
+            }
+        }
 
         if (pos1 == pos2) return new[] { pos1 };
 
@@ -85,7 +94,9 @@ public static class Utils
                 matrixY1 + yIncrease * yModifier
             );
 
-            if (renderer.InBounds(currentPossition))
+            if (
+                renderer.InBounds(currentPossition) ||
+                pos2ParentRenderer.InBounds(RenderManager.GetOffsetOfRelativePosition(currentPossition)))
             {
                 path[i - 1] = currentPossition;
             }
