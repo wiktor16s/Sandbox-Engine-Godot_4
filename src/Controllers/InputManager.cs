@@ -16,10 +16,11 @@ public static class InputManager
                 var mouseRenderPositon = ConvertGlobalToRendererPosition(mousePosition, hoverRenderer);
 
                 hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
-                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.OXYGEN);
+                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.SAND);
                 hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
             }
         }
+
         if (Input.IsMouseButtonPressed(MouseButton.Right))
         {
             var mousePosition = (Vector2I)viewport.GetMousePosition().Floor();
@@ -30,6 +31,20 @@ public static class InputManager
 
                 hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
                 hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.WATER);
+                hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
+            }
+        }
+
+        if (Input.IsMouseButtonPressed(MouseButton.Middle))
+        {
+            var mousePosition = (Vector2I)viewport.GetMousePosition().Floor();
+            if (MouseInChunksBounds(mousePosition))
+            {
+                var hoverRenderer      = RenderManager.GetRendererBy2dIndex(RenderManager.GetRendererIndexByGlobalPosition(mousePosition));
+                var mouseRenderPositon = ConvertGlobalToRendererPosition(mousePosition, hoverRenderer);
+
+                hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
+                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.OXYGEN);
                 hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
             }
         }

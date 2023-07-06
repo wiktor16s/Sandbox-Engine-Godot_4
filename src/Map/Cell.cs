@@ -66,14 +66,6 @@ public class Cell
         return isThisCellMoreDense && thisCellIsDiffMaterialThanTargetCell;
     }
 
-    public bool CheckIsTargetIsOccupied(Vector2I targetPosition)
-    {
-        if (!ParentRenderer.InBounds(targetPosition)) return false;
-
-        var targetCell = ParentRenderer.GetCellFromMapBuffer(targetPosition);
-        return targetCell.Material != EMaterial.VACUUM; //todo fix for gases
-    }
-
 
     public void Update(float tickDeltaTime)
     {
@@ -216,7 +208,7 @@ public class Cell
             var canMoveRightDiagonal = CheckIsTargetPositionIsOccupiable(rightDiagonal);
 
             if ((canMoveLeftDiagonal || canMoveRightDiagonal) && GD.Randf() > GetProperties().Flowability &&
-                CheckIsTargetIsOccupied(ConstPosition + Vector2I.Down)) // if down cell is occupied (cannot fall)
+                !CheckIsTargetPositionIsOccupiable(ConstPosition + Vector2I.Down)) // if down cell is occupied (cannot fall)
             {
                 canMoveLeftDiagonal  = false;
                 canMoveRightDiagonal = false;
@@ -237,49 +229,23 @@ public class Cell
             // todo Liquid flow
             else if (GetElement().Substance is ESubstance.FLUID or ESubstance.GAS)
             {
-                var left             = ConstPosition + Vector2I.Left;
-                var right            = ConstPosition + Vector2I.Right;
-                var canMoveLeft      = true;
-                var canMoveRight     = true;
-                var canFallLeftDown  = false;
-                var canFallRightDown = false;
-
-
-                // todo Check fluids... it smells bad : /
-                // todo SetIsFallingAroundPosition for liquids 
+                var left         = ConstPosition + Vector2I.Left;
+                var right        = ConstPosition + Vector2I.Right;
+                var canMoveLeft  = true;
+                var canMoveRight = true;
 
                 for (var i = 0; i < Utils.GetRandomInt(1, (int)GetProperties().Flowability); i++)
                 {
-                    if (canFallLeftDown && canFallRightDown)
-                    {
-                        finalPosition = Utils.GetRandomBool() ? left + Vector2I.Down : right + Vector2I.Down;
-                        break;
-                    }
-
-                    // if (canFallLeftDown)
-                    // {
-                    //     finalPosition = left + Vector2I.Down;
-                    //     break;
-                    // }
-                    //
-                    // if (canFallRightDown)
-                    // {
-                    //     finalPosition = right + Vector2I.Down;
-                    //     break;
-                    // }
-
                     if (canMoveLeft)
                     {
                         left.X      -= i;
                         canMoveLeft =  CheckIsTargetPositionIsOccupiable(left);
-                        if (canMoveLeft) canFallLeftDown = CheckIsTargetIsOccupied(left + Vector2I.Down);
                     }
 
                     if (canMoveRight)
                     {
                         right.X      += i;
                         canMoveRight =  CheckIsTargetPositionIsOccupiable(right);
-                        if (canMoveRight) canFallRightDown = CheckIsTargetIsOccupied(right + Vector2I.Down);
                     }
                 }
 
