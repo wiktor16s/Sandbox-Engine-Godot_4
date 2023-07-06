@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://di28bp65d2lqb"]
+
+[ext_resource type="Script" path="res://Scenes/MapGenerator.cs" id="1_o8fn2"]
+
+[node name="MapGenerator" type="Sprite2D"]
+script = ExtResource("1_o8fn2")

@@ -5,7 +5,8 @@ namespace SandboxEngine;
 
 public static class Utils
 {
-    private static readonly Random Generator = new();
+    private static readonly Random        Generator = new();
+    public static readonly  FastNoiseLite Noise     = new();
 
     public static T Clamp<T>(T value, T min, T max) where T : IComparable<T>
     {
@@ -21,7 +22,7 @@ public static class Utils
         return Generator.Next() % 2 == 0;
     }
 
-    public static double GetRandomInt(int min, int max)
+    public static int GetRandomInt(int min, int max)
     {
         return Generator.Next(min, max);
     }
@@ -105,15 +106,20 @@ public static class Utils
         return path;
     }
 
-    public static float Normalize(float x, float a, float b)
+    public static float Normalize(float x, float min, float max)
     {
-        if (x < a) return a;
+        if (x < min) return min;
 
-        if (x > b) return b;
+        if (x > max) return max;
 
-        var range           = b - a;
-        var normalizedValue = (x - a) / range;
+        var range           = max - min;
+        var normalizedValue = (x - min) / range;
         return normalizedValue;
+    }
+
+    public static float MapValue(float a, float a0, float a1, float b0, float b1)
+    {
+        return b0 + (b1 - b0) * ((a - a0) / (a1 - a0));
     }
 
     public static Color ModifyColor(Color originalColor, byte range, bool red = true, bool green = true, bool blue = true)

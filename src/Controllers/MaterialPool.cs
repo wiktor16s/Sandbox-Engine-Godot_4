@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Godot;
 using SandboxEngine.Elements;
 using SandboxEngine.Elements.Gas;
@@ -13,10 +14,12 @@ namespace SandboxEngine.Controllers;
 /// </summary>
 public static class MaterialPool
 {
+    public static Dictionary<uint, Element> ElementByColor = new();
+
     public static readonly Sand Sand = new(
         EMaterial.SAND,
         new Color(255, 255, 0),
-        new Properties(0.5f, 0, 0.3f, 0.4f, 1700f, -100f, EMaterial.SAND, EMaterial.SAND)
+        new Properties(0.5f, 0, 0.3f, 0.7f, 1700f, -100f, EMaterial.SAND, EMaterial.SAND)
     );
 
     public static readonly Vacuum Vacuum = new(
@@ -33,9 +36,38 @@ public static class MaterialPool
 
     public static readonly Oxygen Oxygen = new(
         EMaterial.OXYGEN,
-        new Color(220, 240, 255),
-        new Properties(0.1f, 0f, 0.1f, 4f, 0f, 0f, EMaterial.OXYGEN, EMaterial.OXYGEN)
+        new Color(150, 200, 220),
+        new Properties(0.1f, 0f, 0.1f, 10f, 0f, 0f, EMaterial.OXYGEN, EMaterial.OXYGEN)
     );
+
+
+    public static Element GetByColor(Color color)
+    {
+        var col = new Color(color.R8, color.G8, color.B8);
+
+        //GD.Print("GetByColor " + col);
+        if (col.ToRgba32() == Sand.Color.ToRgba32())
+        {
+            return Sand;
+        }
+
+        if (col.ToRgba32() == Vacuum.Color.ToRgba32())
+        {
+            return Vacuum;
+        }
+
+        if (col.ToRgba32() == Water.Color.ToRgba32())
+        {
+            return Water;
+        }
+
+        if (col.ToRgba32() == Oxygen.Color.ToRgba32())
+        {
+            return Oxygen;
+        }
+
+        throw new Exception("Element not found");
+    }
 
     public static Element GetByMaterial(EMaterial material)
     {

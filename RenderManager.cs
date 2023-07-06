@@ -120,65 +120,23 @@ public partial class RenderManager : Node
             final.Y = Globals.MapChunkHeight - Math.Abs(position.Y);
         }
 
-        // var offsetX = 0;
-        // var offsetY = 0;
-        //
-        // if (position.X >= Globals.MapChunkWidth) // right 128 +
-        // {
-        //     offsetX = position.X - Globals.MapChunkWidth - 1;
-        // }
-        //
-        // if (position.X < 0) // left - 0
-        // {
-        //     offsetX = position.X;
-        // }
-        //
-        // if (position.Y >= Globals.MapChunkHeight)
-        // {
-        //     offsetY = position.Y - Globals.MapChunkHeight - 1;
-        // }
-        //
-        // if (position.Y < 0)
-        // {
-        //     offsetY = position.Y;
-        // }
-        //
-        // //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-        //
-        // var finalPos = position;
-        // if (offsetX < 0)
-        // {
-        //     finalPos.X = Globals.MapChunkWidth - Math.Abs(offsetX) - 1;
-        // }
-        // else if (offsetX > 0)
-        // {
-        //     finalPos.X = offsetX - 1;
-        // }
-        //
-        // if (offsetY < 0)
-        // {
-        //     finalPos.Y = Globals.MapChunkHeight - Math.Abs(offsetY) - 1;
-        // }
-        // else if (offsetY > 0)
-        // {
-        //     finalPos.Y = offsetY - 1;
-        // }
-
         return final;
     }
 
     public static EMaterial GetMaterialByColor(Color color)
     {
-        var colorI = color.ToRgba32();
-        switch (colorI)
-        {
-            case 4294902015: //yellow
-                return MaterialPool.Sand.Material;
-            case 65535: //blue
-                return MaterialPool.Water.Material;
-            default:
-                return MaterialPool.Vacuum.Material;
-        }
+        return MaterialPool.GetByColor(color).Material;
+        // var colorI = color.ToRgba32();
+        // switch (colorI)
+        // {
+        //     case 4294902015:
+        //         //yellow
+        //         return MaterialPool.Sand.Material;
+        //     case 65535: //blue
+        //         return MaterialPool.Water.Material;
+        //     default:
+        //         return MaterialPool.Vacuum.Material;
+        // }
     }
 
     public static Color GetColorByMaterial(EMaterial material, bool isDebug = false)
@@ -187,13 +145,16 @@ public partial class RenderManager : Node
         {
             case EMaterial.SAND:
             {
-                return Utils.Darken(MaterialPool.Sand.Color, 100);
+                return Utils.Darken(MaterialPool.Sand.Color, 70);
             }
 
             case EMaterial.WATER:
             {
-                return Utils.Darken(MaterialPool.Water.Color, 100);
+                return Utils.Darken(MaterialPool.Water.Color, 70);
             }
+
+            case EMaterial.OXYGEN:
+                return Utils.Darken(MaterialPool.Oxygen.Color, 20);
 
             case EMaterial.VACUUM:
                 return MaterialPool.Vacuum.Color;
@@ -225,22 +186,22 @@ public partial class RenderManager : Node
         if (originRenderer._rendererIndex.Y >= Globals.GridHeight - 1 && position.Y > Globals.MapChunkHeight - 1)
         {
             position.Y = Globals.MapChunkHeight - 1;
-        } // UNDER DOWN
+        }
 
         if (originRenderer._rendererIndex.Y <= 0 && position.Y < 0)
         {
             position.Y = 0;
-        } // ABOVE UP
+        }
 
         if (originRenderer._rendererIndex.X >= Globals.GridWidth - 1 && position.X > Globals.MapChunkWidth - 1)
         {
             position.X = Globals.MapChunkWidth - 1;
-        } // RIGHT OF RIGHT
+        }
 
         if (originRenderer._rendererIndex.X <= 0 && position.X < 0)
         {
             position.X = 0;
-        } // LEFT OF LEFT
+        }
 
         return position;
     }

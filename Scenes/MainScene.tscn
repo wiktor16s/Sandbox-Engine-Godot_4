@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://csxaon5r1314p"]
 
-[ext_resource type="Script" path="res://fpsCounter.cs" id="1_88o5l"]
-[ext_resource type="Script" path="res://RenderManager.cs" id="2_i2v7t"]
+[ext_resource type="Script" path="res://fpsCounter.cs" id="1_85fqu"]
+[ext_resource type="Script" path="res://RenderManager.cs" id="2_nh1ff"]
 
 [node name="Main" type="Camera2D"]
 anchor_mode = 0
@@ -12,8 +12,8 @@ offset_bottom = 26.0
 theme_override_font_sizes/font_size = 8
 text = "0
 "
-script = ExtResource("1_88o5l")
+script = ExtResource("1_85fqu")
 metadata/_edit_use_anchors_ = true
 
 [node name="RenderManager" type="Node" parent="."]
-script = ExtResource("2_i2v7t")
+script = ExtResource("2_nh1ff")

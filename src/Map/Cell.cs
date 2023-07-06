@@ -146,14 +146,21 @@ public class Cell
                 Velocity += Vector2.Down;
                 break;
             case ESubstance.GAS:
-                Velocity += Vector2.Up;
+                Velocity = Vector2I.Zero;
                 break;
         }
     }
 
     public void ApplyAirResistance()
     {
-        Velocity.X *= 0.3f;
+        if (GetElement().Substance == ESubstance.GAS)
+        {
+            Velocity.X = 0;
+        }
+        else
+        {
+            Velocity.X *= 0.3f;
+        }
     }
 
     public void HandleBounce()
@@ -168,6 +175,10 @@ public class Cell
     {
         if (!ShouldBeUpdated()) return;
         LastUpdatedInTick = ParentRenderer.LocalTickOscilator;
+        if (Utils.GetRandomFloat(0, 1) > 0.2f && GetElement().Substance == ESubstance.GAS)
+        {
+            return;
+        }
 
         ApplyGravity();
         ApplyAirResistance();
@@ -237,7 +248,7 @@ public class Cell
                 // todo Check fluids... it smells bad : /
                 // todo SetIsFallingAroundPosition for liquids 
 
-                for (var i = 0; i < (int)GetProperties().Flowability; i++)
+                for (var i = 0; i < Utils.GetRandomInt(1, (int)GetProperties().Flowability); i++)
                 {
                     if (canFallLeftDown && canFallRightDown)
                     {
@@ -245,17 +256,17 @@ public class Cell
                         break;
                     }
 
-                    if (canFallLeftDown)
-                    {
-                        finalPosition = left + Vector2I.Down;
-                        break;
-                    }
-
-                    if (canFallRightDown)
-                    {
-                        finalPosition = right + Vector2I.Down;
-                        break;
-                    }
+                    // if (canFallLeftDown)
+                    // {
+                    //     finalPosition = left + Vector2I.Down;
+                    //     break;
+                    // }
+                    //
+                    // if (canFallRightDown)
+                    // {
+                    //     finalPosition = right + Vector2I.Down;
+                    //     break;
+                    // }
 
                     if (canMoveLeft)
                     {

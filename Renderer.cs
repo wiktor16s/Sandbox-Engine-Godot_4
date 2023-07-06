@@ -136,7 +136,6 @@ public partial class Renderer : Sprite2D
     {
         //todo optimalize this for god sake...!
         var path = Utils.GetShortestPathBetweenTwoCells(pos1, pos2, this);
-        //GD.Print($"Pos1: {pos1} Pos2: {pos2} Path: {path}");
         foreach (var position in path)
         {
             var thisCellRenderer      = RenderManager.GetRendererByRelativePosition(position, this);
