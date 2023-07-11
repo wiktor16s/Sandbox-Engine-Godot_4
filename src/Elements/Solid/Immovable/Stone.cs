@@ -1,7 +1,21 @@
+using Godot;
+using SandboxEngine.Map;
+
 namespace SandboxEngine.Elements.Solid.Immovable;
 
-public class Stone
+public class Stone : Element
 {
-    public const uint Color    = 4294967295;
-    public const uint Material = Color;
+    public Stone(
+        EMaterial  material,
+        Color      color,
+        Properties properties
+    ) : base(material, ESubstance.STATIC, color, properties)
+    {
+        // constructor
+    }
+
+    public override void Update(Cell cell)
+    {
+        //cell.Move();
+    }
 }

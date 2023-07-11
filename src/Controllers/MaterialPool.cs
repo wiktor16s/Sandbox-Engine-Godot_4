@@ -5,6 +5,7 @@ using SandboxEngine.Elements;
 using SandboxEngine.Elements.Gas;
 using SandboxEngine.Elements.Liquid;
 using SandboxEngine.Elements.None;
+using SandboxEngine.Elements.Solid.Immovable;
 using SandboxEngine.Elements.Solid.Movable;
 
 namespace SandboxEngine.Controllers;
@@ -40,12 +41,17 @@ public static class MaterialPool
         new Properties(0.1f, 0f, 0.1f, 10f, 0f, 0f, EMaterial.OXYGEN, EMaterial.OXYGEN)
     );
 
+    public static readonly Stone Stone = new(
+        EMaterial.STONE,
+        new Color(50, 50, 50),
+        new Properties(0.9f, 0, 0f, 0f, 1700f, -100f, EMaterial.STONE, EMaterial.STONE)
+    );
+
 
     public static Element GetByColor(Color color)
     {
         var col = new Color(color.R8, color.G8, color.B8);
 
-        //GD.Print("GetByColor " + col);
         if (col.ToRgba32() == Sand.Color.ToRgba32())
         {
             return Sand;
@@ -66,6 +72,11 @@ public static class MaterialPool
             return Oxygen;
         }
 
+        if (col.ToRgba32() == Stone.Color.ToRgba32())
+        {
+            return Stone;
+        }
+
         throw new Exception("Element not found");
     }
 
@@ -77,6 +88,7 @@ public static class MaterialPool
             EMaterial.VACUUM => Vacuum,
             EMaterial.WATER  => Water,
             EMaterial.OXYGEN => Oxygen,
+            EMaterial.STONE  => Stone,
             _                => throw new ArgumentOutOfRangeException(nameof(material), material, null)
         };
     }

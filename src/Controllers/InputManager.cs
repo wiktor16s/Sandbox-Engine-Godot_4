@@ -5,6 +5,8 @@ namespace SandboxEngine.Controllers;
 
 public static class InputManager
 {
+    public static EMaterial selectedMaterial = EMaterial.SAND;
+
     public static void UpdateMouseButtons(Viewport viewport) //todo
     {
         if (Input.IsMouseButtonPressed(MouseButton.Left))
@@ -44,7 +46,7 @@ public static class InputManager
                 var mouseRenderPositon = ConvertGlobalToRendererPosition(mousePosition, hoverRenderer);
 
                 hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
-                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.OXYGEN);
+                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.STONE);
                 hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
             }
         }

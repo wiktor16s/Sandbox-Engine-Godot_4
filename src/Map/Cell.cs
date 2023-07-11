@@ -167,7 +167,7 @@ public class Cell
     {
         if (!ShouldBeUpdated()) return;
         LastUpdatedInTick = ParentRenderer.LocalTickOscilator;
-        if (Utils.GetRandomFloat(0, 1) > 0.2f && GetElement().Substance == ESubstance.GAS)
+        if (Utils.GetRandomFloat(0, 1) > 0.2f && GetElement().Substance == ESubstance.GAS) // skip ticks for gases
         {
             return;
         }

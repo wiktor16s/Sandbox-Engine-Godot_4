@@ -123,38 +123,25 @@ public partial class RenderManager : Node
         return final;
     }
 
-    public static EMaterial GetMaterialByColor(Color color)
-    {
-        return MaterialPool.GetByColor(color).Material;
-        // var colorI = color.ToRgba32();
-        // switch (colorI)
-        // {
-        //     case 4294902015:
-        //         //yellow
-        //         return MaterialPool.Sand.Material;
-        //     case 65535: //blue
-        //         return MaterialPool.Water.Material;
-        //     default:
-        //         return MaterialPool.Vacuum.Material;
-        // }
-    }
-
     public static Color GetColorByMaterial(EMaterial material, bool isDebug = false)
     {
         switch (material)
         {
             case EMaterial.SAND:
             {
-                return Utils.Darken(MaterialPool.Sand.Color, 70);
+                return Utils.Darken(MaterialPool.Sand.Color, 50);
             }
 
             case EMaterial.WATER:
             {
-                return Utils.Darken(MaterialPool.Water.Color, 70);
+                return Utils.Darken(MaterialPool.Water.Color, 50);
             }
 
             case EMaterial.OXYGEN:
-                return Utils.Darken(MaterialPool.Oxygen.Color, 20);
+                return Utils.Darken(MaterialPool.Oxygen.Color, 15);
+
+            case EMaterial.STONE:
+                return Utils.Darken(MaterialPool.Stone.Color, 10);
 
             case EMaterial.VACUUM:
                 return MaterialPool.Vacuum.Color;

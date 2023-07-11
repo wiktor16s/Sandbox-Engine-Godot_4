@@ -16,7 +16,7 @@ public partial class Renderer : Sprite2D
     public bool     IsActive           = true;
     public bool     LocalTickOscilator = true;
     public Vector2I Position;
-    
+
     private void LoadMapFromTexture()
     {
         _mapImage   = Texture.GetImage();
@@ -25,11 +25,11 @@ public partial class Renderer : Sprite2D
     }
 
 
-    public void DrawCell(Vector2I position, EMaterial material)
+    public void DrawCell(Vector2I position, EMaterial material, bool fall = true)
     {
         var cell = GetCellFromMapBuffer(position);
         cell.SetMaterial(material);
-        cell.IsFalling = true;
+        cell.IsFalling = fall;
         _mapImage.SetPixelv(position, RenderManager.GetColorByMaterial(material));
     }
 
@@ -67,9 +67,11 @@ public partial class Renderer : Sprite2D
     {
         for (var i = 0; i < renderer._mapBuffer.Length; i++)
         {
-            var coords = ComputePosition(i, Globals.MapChunkWidth);
-            var color  = imageTexture.GetPixel(coords.X, coords.Y);
-            renderer._mapBuffer[i].SetMaterial(RenderManager.GetMaterialByColor(color));
+            var coords   = ComputePosition(i, Globals.MapChunkWidth);
+            var color    = imageTexture.GetPixel(coords.X, coords.Y);
+            var material = MaterialPool.GetByColor(color).Material;
+            renderer._mapBuffer[i].SetMaterial(material);
+            DrawCell(coords, material, false);
         }
     }
 
