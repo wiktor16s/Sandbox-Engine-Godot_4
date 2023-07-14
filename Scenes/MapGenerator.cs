@@ -20,7 +20,7 @@ public partial class MapGenerator : Sprite2D
 
         for (var x = 0; x < _mapWidth; x++)
         {
-            var noise = Utils.Noise.GetNoise1D(_offset);
+            var noise  = Utils.Noise.GetNoise1D(_offset);
             var yNoise = Utils.Noise.GetNoise1D(_offset) * _mapHeight / Utils.GetRandomInt(2, 3) + _mapHeight / 1.3f;
             //var yNoise = Utils.MapValue(noise, -1, 1, _mapHeight / 2f, _mapHeight);
             var ySin   = Math.Sin(_offset);

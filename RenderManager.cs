@@ -7,13 +7,15 @@ namespace SandboxEngine;
 
 public partial class RenderManager : Node
 {
-    public static Renderer[][] RenderChunks;
-
+    private static readonly Renderer[][] RenderChunks = new Renderer[Globals.GridWidth][];
 
     public override void _Ready()
     {
-        RenderChunks = new Renderer[Globals.GridWidth][];
+        CreateRenderers();
+    }
 
+    public void CreateRenderers()
+    {
         for (var i = 0; i < Globals.GridWidth; i++) RenderChunks[i] = new Renderer[Globals.GridHeight];
         for (var x = 0; x < Globals.GridWidth; x++)
         {
@@ -29,8 +31,7 @@ public partial class RenderManager : Node
                 renderer.GlobalPosition = renderer.Position;
                 GD.Print($"x: {renderer.Position.X} y: {renderer.Position.Y}");
 
-                renderer.Texture = ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{GetChildren().Count}.bmp"));
-                //renderer.Texture   = ImageTexture.CreateFromImage(Image.LoadFromFile("res://assets/5x5.bmp"));
+                renderer.Texture   = ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{GetChildren().Count}.bmp"));
                 renderer.Scale     = new Vector2I(Globals.RendererScale, Globals.RendererScale);
                 renderer.Name      = $"Renderer_{ComputeIndex(x, y)}";
                 RenderChunks[x][y] = renderer;
@@ -39,18 +40,24 @@ public partial class RenderManager : Node
         }
     }
 
-
     public override void _Process(double delta)
     {
         InputManager.UpdateMouseButtons(GetViewport());
-        foreach (var yChunks in RenderChunks)
+        InputManager.UpdateKeyboard();
+
+        foreach (var yRenderer in RenderChunks)
         {
-            foreach (var xChunk in yChunks)
+            foreach (var xRenderer in yRenderer)
             {
-                if (!xChunk.IsActive) break;
-                xChunk.UpdateAll();
-                xChunk._mapTexture.Update(xChunk._mapImage);
-                xChunk.Texture = xChunk._mapTexture;
+                xRenderer.LocalTickOscilator = !xRenderer.LocalTickOscilator;
+                if (!xRenderer.IsActive) break;
+                xRenderer.ProcessChunk(0);
+                xRenderer.ProcessChunk(1);
+                xRenderer.ProcessChunk(2);
+                xRenderer.ProcessChunk(3);
+
+                xRenderer._mapTexture.Update(xRenderer._mapImage);
+                xRenderer.Texture = xRenderer._mapTexture;
             }
         }
     }
@@ -129,7 +136,7 @@ public partial class RenderManager : Node
         {
             case EMaterial.SAND:
             {
-                return Utils.Darken(MaterialPool.Sand.Color, 50);
+                return Utils.Darken(MaterialPool.Sand.Color, 150);
             }
 
             case EMaterial.WATER:

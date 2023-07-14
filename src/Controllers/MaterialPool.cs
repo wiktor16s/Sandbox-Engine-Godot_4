@@ -43,7 +43,7 @@ public static class MaterialPool
 
     public static readonly Stone Stone = new(
         EMaterial.STONE,
-        new Color(50, 50, 50),
+        new Color(100, 100, 100),
         new Properties(0.9f, 0, 0f, 0f, 1700f, -100f, EMaterial.STONE, EMaterial.STONE)
     );
 

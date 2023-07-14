@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Godot;
 using SandboxEngine.Elements;
 
@@ -6,48 +7,40 @@ namespace SandboxEngine.Controllers;
 public static class InputManager
 {
     public static EMaterial selectedMaterial = EMaterial.SAND;
+    public static int       brushSize        = 1;
+
+    public static void UpdateKeyboard()
+    {
+        if (Input.IsKeyPressed(Key.Key1)) selectedMaterial = EMaterial.SAND;
+        if (Input.IsKeyPressed(Key.Key2)) selectedMaterial = EMaterial.WATER;
+        if (Input.IsKeyPressed(Key.Key3)) selectedMaterial = EMaterial.STONE;
+        if (Input.IsKeyPressed(Key.Key4)) selectedMaterial = EMaterial.OXYGEN;
+        if (Input.IsKeyPressed(Key.Key5)) selectedMaterial = EMaterial.VACUUM;
+    }
 
     public static void UpdateMouseButtons(Viewport viewport) //todo
     {
         if (Input.IsMouseButtonPressed(MouseButton.Left))
         {
             var mousePosition = (Vector2I)viewport.GetMousePosition().Floor();
-            if (MouseInChunksBounds(mousePosition))
+            var positions     = new List<Vector2I>();
+
+            positions.Add(mousePosition + Vector2I.Up);
+            positions.Add(mousePosition + Vector2I.Left);
+            positions.Add(mousePosition + Vector2I.Right);
+            positions.Add(mousePosition + Vector2I.Down);
+
+            for (var i = 0; i < positions.Count; i++)
             {
-                var hoverRenderer      = RenderManager.GetRendererBy2dIndex(RenderManager.GetRendererIndexByGlobalPosition(mousePosition));
-                var mouseRenderPositon = ConvertGlobalToRendererPosition(mousePosition, hoverRenderer);
+                if (MouseInChunksBounds(positions[i]))
+                {
+                    var hoverRenderer      = RenderManager.GetRendererBy2dIndex(RenderManager.GetRendererIndexByGlobalPosition(positions[i]));
+                    var mouseRenderPositon = ConvertGlobalToRendererPosition(positions[i], hoverRenderer);
 
-                hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
-                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.SAND);
-                hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
-            }
-        }
-
-        if (Input.IsMouseButtonPressed(MouseButton.Right))
-        {
-            var mousePosition = (Vector2I)viewport.GetMousePosition().Floor();
-            if (MouseInChunksBounds(mousePosition))
-            {
-                var hoverRenderer      = RenderManager.GetRendererBy2dIndex(RenderManager.GetRendererIndexByGlobalPosition(mousePosition));
-                var mouseRenderPositon = ConvertGlobalToRendererPosition(mousePosition, hoverRenderer);
-
-                hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
-                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.WATER);
-                hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
-            }
-        }
-
-        if (Input.IsMouseButtonPressed(MouseButton.Middle))
-        {
-            var mousePosition = (Vector2I)viewport.GetMousePosition().Floor();
-            if (MouseInChunksBounds(mousePosition))
-            {
-                var hoverRenderer      = RenderManager.GetRendererBy2dIndex(RenderManager.GetRendererIndexByGlobalPosition(mousePosition));
-                var mouseRenderPositon = ConvertGlobalToRendererPosition(mousePosition, hoverRenderer);
-
-                hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
-                hoverRenderer.DrawCell(mouseRenderPositon, EMaterial.STONE);
-                hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
+                    hoverRenderer.GetCellFromMapBuffer(mouseRenderPositon).IsFalling = true;
+                    hoverRenderer.DrawCell(mouseRenderPositon, selectedMaterial);
+                    hoverRenderer.SetIsFallingAroundPosition(mouseRenderPositon);
+                }
             }
         }
     }

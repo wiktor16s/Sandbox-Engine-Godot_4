@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using SandboxEngine.Map;
 
 namespace SandboxEngine;
 
@@ -7,6 +8,63 @@ public static class Utils
 {
     private static readonly Random        Generator = new();
     public static readonly  FastNoiseLite Noise     = new();
+
+    public static Cell[][] SplitCellArrayIntoSquareChunks_v2(Cell[] mapBuffer)
+    {
+        int i, j;
+        var n      = mapBuffer.Length;
+        var k      = (int)Math.Round(Math.Sqrt(n) / 2);
+        var result = new Cell[4][];
+        for (i = 0; i < 4; i++)
+            result[i] = new Cell[n / 4];
+
+        int tOff = 0, sOff = 0;
+
+        i = 0;
+        for (j = 0; j < k; j++)
+        {
+            tOff += k;
+            for (; i < tOff; i++)
+                result[0][i] = mapBuffer[sOff + i];
+            sOff += k;
+        }
+
+        sOff = k;
+        tOff = 0;
+        i    = 0;
+        for (j = 0; j < k; j++)
+        {
+            tOff += k;
+            while (i < tOff)
+                result[1][i] = mapBuffer[sOff + i++];
+            sOff += k;
+        }
+
+        sOff = n / 2;
+        tOff = 0;
+        i    = 0;
+        for (j = 0; j < k; j++)
+        {
+            tOff += k;
+            while (i < tOff)
+                result[2][i] = mapBuffer[sOff + i++];
+            sOff += k;
+        }
+
+        sOff = n / 2 + k;
+        tOff = 0;
+        i    = 0;
+        for (j = 0; j < k; j++)
+        {
+            tOff += k;
+            while (i < tOff)
+                result[3][i] = mapBuffer[sOff + i++];
+            sOff += k;
+        }
+
+        return result;
+    }
+
 
     public static T Clamp<T>(T value, T min, T max) where T : IComparable<T>
     {
@@ -117,51 +175,6 @@ public static class Utils
         return normalizedValue;
     }
 
-    public static float MapValue(float a, float a0, float a1, float b0, float b1)
-    {
-        return b0 + (b1 - b0) * ((a - a0) / (a1 - a0));
-    }
-
-    public static Color ModifyColor(Color originalColor, byte range, bool red = true, bool green = true, bool blue = true)
-    {
-        var modifiedColor = new Color(
-            originalColor.R,
-            originalColor.G,
-            originalColor.B,
-            0.2f
-        );
-        var redColor    = (byte)originalColor.R;
-        var greenColor  = (byte)originalColor.G;
-        var blueColor   = (byte)originalColor.B;
-        var changeRed   = 0f;
-        var changeGreen = 0f;
-        var changeBlue  = 0f;
-
-        if (red) changeRed = (float)(Generator.NextDouble() * 2 - 1) * range;
-
-        if (green) changeGreen = (float)(Generator.NextDouble() * 2 - 1) * range;
-
-        if (blue) changeBlue = (float)(Generator.NextDouble() * 2 - 1) * range;
-
-        var newRedColor   = redColor   + changeRed;
-        var newGreenColor = greenColor + changeGreen;
-        var newBlueColor  = blueColor  + changeBlue;
-
-        newRedColor   = Math.Min(255, newRedColor);
-        newRedColor   = Math.Max(0, newRedColor);
-        newGreenColor = Math.Min(255, newGreenColor);
-        newGreenColor = Math.Max(0, newGreenColor);
-        newBlueColor  = Math.Min(255, newBlueColor);
-        newBlueColor  = Math.Max(0, newBlueColor);
-        modifiedColor = new Color(
-            Normalize(newRedColor,   0, 255),
-            Normalize(newGreenColor, 0, 255),
-            Normalize(newBlueColor,  0, 255)
-        );
-
-
-        return modifiedColor;
-    }
 
     public static Color Darken(Color color, float maxChange)
     {
@@ -172,5 +185,27 @@ public static class Utils
             Normalize(color.B - colorChange, 0, 255)
         );
         return newColor;
+    }
+
+    public static Cell[][] SplitCellArrayIntoSquareChunks(Cell[] mapBuffer)
+    {
+        var halfLength = mapBuffer.Length / 2;
+
+        var size     = Mathf.RoundToInt(Mathf.Sqrt(mapBuffer.Length));
+        var halfSize = size / 2;
+
+        var splitVals = new Cell[4][];
+        for (var i = 0; i < splitVals.Length; i++)
+            splitVals[i] = new Cell[mapBuffer.Length / 4];
+
+        for (var groupIndex = 0; groupIndex < 4; groupIndex++)
+        {
+            var initialGroupIndex = groupIndex / 2 * halfLength + groupIndex % 2 * halfSize;
+            for (var x = 0; x < halfSize; x++)
+                for (var y = 0; y < halfSize; y++)
+                    splitVals[groupIndex][x * halfSize + y] = mapBuffer[initialGroupIndex + x * size + y];
+        }
+
+        return splitVals;
     }
 }

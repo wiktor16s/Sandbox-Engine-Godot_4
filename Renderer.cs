@@ -8,22 +8,37 @@ namespace SandboxEngine;
 
 public partial class Renderer : Sprite2D
 {
-    public Cell[]       _mapBuffer;  // array of cells todo move to self controller (performance impact)
-    public Image        _mapImage;   // blob of image data
-    public ImageTexture _mapTexture; // texture of image data
+    private Cell[][]     _chunkOfCells;
+    public  Cell[]       _mapBuffer;  // array of cells todo move to self controller (performance impact)
+    public  Image        _mapImage;   // blob of image data
+    public  ImageTexture _mapTexture; // texture of image data
 
     public Vector2I _rendererIndex;
     public bool     IsActive           = true;
     public bool     LocalTickOscilator = true;
     public Vector2I Position;
 
-    private void LoadMapFromTexture()
+    private void LoadMapBufferFromTexture()
     {
         _mapImage   = Texture.GetImage();
         _mapTexture = ImageTexture.CreateFromImage(_mapImage);
         CopyImageToMap(_mapImage, this);
     }
 
+    public void InitMapBuffer()
+    {
+        _mapBuffer = new Cell[Globals.MapChunkHeight * Globals.MapChunkWidth];
+        for (var i = 0; i < _mapBuffer.Length; i++)
+        {
+            var position = ComputePosition(i, Globals.MapChunkWidth);
+            _mapBuffer[i] = new Cell(position.X, position.Y, this);
+        }
+    }
+
+    public void DivideMapBufferIntoChunks()
+    {
+        _chunkOfCells = Utils.SplitCellArrayIntoSquareChunks(_mapBuffer);
+    }
 
     public void DrawCell(Vector2I position, EMaterial material, bool fall = true)
     {
@@ -37,30 +52,9 @@ public partial class Renderer : Sprite2D
     public override void _Ready()
     {
         Engine.MaxFps = Globals.MaxFps;
-// init map buffer
-        _mapBuffer = new Cell[Globals.MapChunkHeight * Globals.MapChunkWidth];
-
-        for (var i = 0; i < _mapBuffer.Length; i++)
-        {
-            var position = ComputePosition(i, Globals.MapChunkWidth);
-            _mapBuffer[i] = new Cell(position.X, position.Y, this);
-        }
-// end of init map buffer
-
-
-        LoadMapFromTexture();
-    }
-
-    public override void _PhysicsProcess(double delta)
-    {
-        // Method intentionally left empty.
-    }
-
-    public override void _Process(double delta)
-    {
-        if (!IsActive)
-        {
-        }
+        InitMapBuffer();
+        LoadMapBufferFromTexture();
+        DivideMapBufferIntoChunks();
     }
 
     public void CopyImageToMap(Image imageTexture, Renderer renderer)
@@ -98,16 +92,6 @@ public partial class Renderer : Sprite2D
 
     public Vector2I NormalizePosition(Vector2I position)
     {
-        // if (position.Y > Globals.MapChunkHeight - 1)
-        // {
-        //     position.Y = Globals.MapChunkHeight - 1;
-        // }
-        //
-        // if (position.Y < 0)
-        // {
-        //     position.Y = 0;
-        // }
-
         return position;
     }
 
@@ -173,18 +157,32 @@ public partial class Renderer : Sprite2D
         // SetIsFallingInSpecificPosition(position + Vector2I.Down + Vector2I.Left);
     }
 
-    public void UpdateAll()
+    public void ProcessChunk(int chunkIndex)
     {
-        LocalTickOscilator = !LocalTickOscilator;
-        for (var i = 0; i < Globals.MapChunkHeight; i++)
+        for (var i = 0; i < Globals.MapChunkHeight / Globals.AmountOfChunksPerRenderer * 2; i++)
             if (i % 2 == 0)
-                for (var j = 0; j < Globals.MapChunkWidth; j++)
+                for (var j = 0; j < Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2; j++)
                 {
-                    _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
+                    _chunkOfCells[chunkIndex][i * Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2 + j].Update(0f);
                 }
 
             else
-                for (var j = Globals.MapChunkWidth - 1; j >= 0; j--)
-                    _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
+                for (var j = Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2 - 1; j >= 0; j--)
+                    _chunkOfCells[chunkIndex][i * Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2 + j].Update(0f);
     }
+
+    // public void UpdateAll() todo probably delete this
+    // {
+    //     LocalTickOscilator = !LocalTickOscilator;
+    //     for (var i = 0; i < Globals.MapChunkHeight; i++)
+    //         if (i % 2 == 0)
+    //             for (var j = 0; j < Globals.MapChunkWidth; j++)
+    //             {
+    //                 _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
+    //             }
+    //
+    //         else
+    //             for (var j = Globals.MapChunkWidth - 1; j >= 0; j--)
+    //                 _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
+    // }
 }
