@@ -8,10 +8,10 @@ namespace SandboxEngine;
 
 public partial class Renderer : Sprite2D
 {
-    private Cell[][]     _chunkOfCells;
-    public  Cell[]       _mapBuffer;  // array of cells todo move to self controller (performance impact)
-    public  Image        _mapImage;   // blob of image data
-    public  ImageTexture _mapTexture; // texture of image data
+    private Cell[][]     _chunkOfCells; //[ChunkId][Cell]
+    public  Cell[]       _mapBuffer;    // array of cells todo move to self controller (performance impact)
+    public  Image        _mapImage;     // blob of image data
+    public  ImageTexture _mapTexture;   // texture of image data
 
     public Vector2I _rendererIndex;
     public bool     IsActive           = true;
@@ -27,12 +27,18 @@ public partial class Renderer : Sprite2D
 
     public void InitMapBuffer()
     {
-        _mapBuffer = new Cell[Globals.MapChunkHeight * Globals.MapChunkWidth];
+        _mapBuffer = new Cell[Globals.MapRendererHeight * Globals.MapRendererWidth];
         for (var i = 0; i < _mapBuffer.Length; i++)
         {
-            var position = ComputePosition(i, Globals.MapChunkWidth);
+            var position = ComputePosition(i, Globals.MapRendererWidth);
             _mapBuffer[i] = new Cell(position.X, position.Y, this);
         }
+    }
+
+    public Cell[] GetSpecificChunkOfCells(int id)
+    {
+        if (id > Globals.AmountOfChunksInRenderer - 1 || id < 0) throw new ArgumentOutOfRangeException($"Chunk id: {id} - is out of range ");
+        return _chunkOfCells[id];
     }
 
     public void DivideMapBufferIntoChunks()
@@ -61,7 +67,7 @@ public partial class Renderer : Sprite2D
     {
         for (var i = 0; i < renderer._mapBuffer.Length; i++)
         {
-            var coords   = ComputePosition(i, Globals.MapChunkWidth);
+            var coords   = ComputePosition(i, Globals.MapRendererWidth);
             var color    = imageTexture.GetPixel(coords.X, coords.Y);
             var material = MaterialPool.GetByColor(color).Material;
             renderer._mapBuffer[i].SetMaterial(material);
@@ -71,7 +77,7 @@ public partial class Renderer : Sprite2D
 
     public static int ComputeIndex(Vector2I cellPosition)
     {
-        return cellPosition.Y * Globals.MapChunkWidth + cellPosition.X;
+        return cellPosition.Y * Globals.MapRendererWidth + cellPosition.X;
     }
 
     public Vector2I ComputePosition(int index, int width)
@@ -84,10 +90,10 @@ public partial class Renderer : Sprite2D
 
     public bool InBounds(Vector2I position)
     {
-        return position.X >= 0                    &&
-               position.X < Globals.MapChunkWidth &&
-               position.Y >= 0                    &&
-               position.Y < Globals.MapChunkHeight;
+        return position.X >= 0                       &&
+               position.X < Globals.MapRendererWidth &&
+               position.Y >= 0                       &&
+               position.Y < Globals.MapRendererHeight;
     }
 
     public Vector2I NormalizePosition(Vector2I position)
@@ -159,30 +165,21 @@ public partial class Renderer : Sprite2D
 
     public void ProcessChunk(int chunkIndex)
     {
-        for (var i = 0; i < Globals.MapChunkHeight / Globals.AmountOfChunksPerRenderer * 2; i++)
+        for (var i = 0; i < Globals.MapRendererHeight / Globals.AmountOfChunksInRenderer * 2; i++)
             if (i % 2 == 0)
-                for (var j = 0; j < Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2; j++)
-                {
-                    _chunkOfCells[chunkIndex][i * Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2 + j].Update(0f);
-                }
+                for (var j = 0; j < Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2; j++)
+                    _chunkOfCells[chunkIndex][i * Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 + j].Update(0f);
+
 
             else
-                for (var j = Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2 - 1; j >= 0; j--)
-                    _chunkOfCells[chunkIndex][i * Globals.MapChunkWidth / Globals.AmountOfChunksPerRenderer * 2 + j].Update(0f);
+                for (var j = Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 - 1; j >= 0; j--)
+                    _chunkOfCells[chunkIndex][i * Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 + j].Update(0f);
     }
 
-    // public void UpdateAll() todo probably delete this
-    // {
-    //     LocalTickOscilator = !LocalTickOscilator;
-    //     for (var i = 0; i < Globals.MapChunkHeight; i++)
-    //         if (i % 2 == 0)
-    //             for (var j = 0; j < Globals.MapChunkWidth; j++)
-    //             {
-    //                 _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
-    //             }
-    //
-    //         else
-    //             for (var j = Globals.MapChunkWidth - 1; j >= 0; j--)
-    //                 _mapBuffer[i * Globals.MapChunkWidth + j].Update(0f);
-    // }
+    public void UpdateTexture()
+    {
+        LocalTickOscilator = !LocalTickOscilator;
+        _mapTexture.Update(_mapImage);
+        Texture = _mapTexture;
+    }
 }

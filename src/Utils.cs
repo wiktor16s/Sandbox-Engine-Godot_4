@@ -208,4 +208,12 @@ public static class Utils
 
         return splitVals;
     }
+
+    public static Vector2I ComputePosition(int index, int width, int height)
+    {
+        return new Vector2I(
+            index % width,
+            index / height
+        );
+    }
 }

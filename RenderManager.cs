@@ -2,39 +2,43 @@ using System;
 using Godot;
 using SandboxEngine.Controllers;
 using SandboxEngine.Elements;
+using SandboxEngine.Map;
 
 namespace SandboxEngine;
 
 public partial class RenderManager : Node
 {
-    private static readonly Renderer[][] RenderChunks = new Renderer[Globals.GridWidth][];
+    public static readonly Renderer[][] Renderers     = new Renderer[Globals.GridRendererWidth][];
+    public static          Cell[][]     AllChunksById = new Cell[Globals.AmountOfChunksInRenderer][];
 
     public override void _Ready()
     {
         CreateRenderers();
+        ThreadManager.InitRenderThreads();
     }
+
 
     public void CreateRenderers()
     {
-        for (var i = 0; i < Globals.GridWidth; i++) RenderChunks[i] = new Renderer[Globals.GridHeight];
-        for (var x = 0; x < Globals.GridWidth; x++)
+        for (var i = 0; i < Globals.GridRendererWidth; i++) Renderers[i] = new Renderer[Globals.GridRendererHeight];
+        for (var x = 0; x < Globals.GridRendererWidth; x++)
         {
-            for (var y = 0; y < Globals.GridHeight; y++)
+            for (var y = 0; y < Globals.GridRendererHeight; y++)
             {
                 var rendererScene = GD.Load<PackedScene>("res://Renderer.tscn");
                 var renderer      = rendererScene.Instantiate<Renderer>();
                 renderer._rendererIndex = new Vector2I(x, y);
                 renderer.Position = new Vector2I(
-                    x * Globals.MapChunkWidth  * Globals.RendererScale,
-                    y * Globals.MapChunkHeight * Globals.RendererScale);
+                    x * Globals.MapRendererWidth  * Globals.RendererScale,
+                    y * Globals.MapRendererHeight * Globals.RendererScale);
 
                 renderer.GlobalPosition = renderer.Position;
                 GD.Print($"x: {renderer.Position.X} y: {renderer.Position.Y}");
 
-                renderer.Texture   = ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{GetChildren().Count}.bmp"));
-                renderer.Scale     = new Vector2I(Globals.RendererScale, Globals.RendererScale);
-                renderer.Name      = $"Renderer_{ComputeIndex(x, y)}";
-                RenderChunks[x][y] = renderer;
+                renderer.Texture = ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{GetChildren().Count}.bmp"));
+                renderer.Scale   = new Vector2I(Globals.RendererScale, Globals.RendererScale);
+                renderer.Name    = $"Renderer_{ComputeIndex(x, y)}";
+                Renderers[x][y]  = renderer;
                 AddChild(renderer);
             }
         }
@@ -44,42 +48,35 @@ public partial class RenderManager : Node
     {
         InputManager.UpdateMouseButtons(GetViewport());
         InputManager.UpdateKeyboard();
-
-        foreach (var yRenderer in RenderChunks)
-        {
-            foreach (var xRenderer in yRenderer)
-            {
-                xRenderer.LocalTickOscilator = !xRenderer.LocalTickOscilator;
-                if (!xRenderer.IsActive) break;
-                xRenderer.ProcessChunk(0);
-                xRenderer.ProcessChunk(1);
-                xRenderer.ProcessChunk(2);
-                xRenderer.ProcessChunk(3);
-
-                xRenderer._mapTexture.Update(xRenderer._mapImage);
-                xRenderer.Texture = xRenderer._mapTexture;
-            }
-        }
+        ThreadManager.ChunksIteration();
     }
 
     public static int ComputeIndex(int x, int y)
     {
-        return y * Globals.GridWidth + x;
+        return y * Globals.GridRendererWidth + x;
+    }
+
+    public static Renderer GetRendererByIndex(int index)
+    {
+        return GetRendererBy2dIndex(new Vector2I(
+            index % Globals.GridRendererWidth,
+            index / Globals.GridRendererHeight
+        ));
     }
 
     public static Renderer GetRendererBy2dIndex(Vector2I position)
     {
-        if (position.X >= Globals.GridWidth) throw new IndexOutOfRangeException("X Index of renderer is ot of range Globals GridWidth");
-        if (position.Y >= Globals.GridHeight) throw new IndexOutOfRangeException("Y Index of renderer is ot of range Globals GridHeight");
+        if (position.X >= Globals.GridRendererWidth) throw new IndexOutOfRangeException("X Index of renderer is ot of range Globals GridWidth");
+        if (position.Y >= Globals.GridRendererHeight) throw new IndexOutOfRangeException("Y Index of renderer is ot of range Globals GridHeight");
 
-        return RenderChunks[position.X][position.Y];
+        return Renderers[position.X][position.Y];
     }
 
     public static Vector2I GetRendererIndexByGlobalPosition(Vector2I globalPosition)
     {
         return new Vector2I(
-            (int)Math.Floor((double)(globalPosition.X / (Globals.MapChunkWidth  * Globals.RendererScale))),
-            (int)Math.Floor((double)(globalPosition.Y / (Globals.MapChunkHeight * Globals.RendererScale)))
+            (int)Math.Floor((double)(globalPosition.X / (Globals.MapRendererWidth  * Globals.RendererScale))),
+            (int)Math.Floor((double)(globalPosition.Y / (Globals.MapRendererHeight * Globals.RendererScale)))
         );
     }
 
@@ -89,10 +86,10 @@ public partial class RenderManager : Node
         {
             var nextRendererIndex = originRenderer._rendererIndex;
 
-            if (position.X < 0) nextRendererIndex.X                       -= 1;
-            if (position.X >= Globals.MapChunkWidth) nextRendererIndex.X  += 1;
-            if (position.Y < 0) nextRendererIndex.Y                       -= 1;
-            if (position.Y >= Globals.MapChunkHeight) nextRendererIndex.Y += 1;
+            if (position.X < 0) nextRendererIndex.X                          -= 1;
+            if (position.X >= Globals.MapRendererWidth) nextRendererIndex.X  += 1;
+            if (position.Y < 0) nextRendererIndex.Y                          -= 1;
+            if (position.Y >= Globals.MapRendererHeight) nextRendererIndex.Y += 1;
 
             return GetRendererBy2dIndex(nextRendererIndex);
         }
@@ -107,24 +104,24 @@ public partial class RenderManager : Node
     {
         var final = position;
 
-        if (position.X > Globals.MapChunkWidth - 1) // right 128 +
+        if (position.X > Globals.MapRendererWidth - 1) // right 128 +
         {
-            final.X = position.X - Globals.MapChunkWidth;
+            final.X = position.X - Globals.MapRendererWidth;
         }
 
         else if (position.X < 0)
         {
-            final.X = Globals.MapChunkWidth - Math.Abs(position.X);
+            final.X = Globals.MapRendererWidth - Math.Abs(position.X);
         }
 
-        if (position.Y > Globals.MapChunkHeight - 1)
+        if (position.Y > Globals.MapRendererHeight - 1)
         {
-            final.Y = position.Y - Globals.MapChunkHeight;
+            final.Y = position.Y - Globals.MapRendererHeight;
         }
 
         if (position.Y < 0)
         {
-            final.Y = Globals.MapChunkHeight - Math.Abs(position.Y);
+            final.Y = Globals.MapRendererHeight - Math.Abs(position.Y);
         }
 
         return final;
@@ -161,25 +158,25 @@ public partial class RenderManager : Node
     {
         var nextIndex = actualRenderer._rendererIndex + direction;
 
-        return nextIndex.X >= 0 && nextIndex.X < Globals.GridWidth &&
-               nextIndex.Y >= 0 && nextIndex.Y < Globals.GridHeight;
+        return nextIndex.X >= 0 && nextIndex.X < Globals.GridRendererWidth &&
+               nextIndex.Y >= 0 && nextIndex.Y < Globals.GridRendererHeight;
     }
 
     public static bool IsPositionInAnyChunkBound(Renderer originRenderer, Vector2I position)
     {
-        if (originRenderer._rendererIndex.Y >= Globals.GridHeight - 1 && position.Y > Globals.MapChunkHeight - 1) return false;
-        if (originRenderer._rendererIndex.Y <= 0                      && position.Y < 0) return false;
-        if (originRenderer._rendererIndex.X >= Globals.GridWidth - 1  && position.X > Globals.MapChunkWidth - 1) return false;
-        if (originRenderer._rendererIndex.X <= 0                      && position.X < 0) return false;
+        if (originRenderer._rendererIndex.Y >= Globals.GridRendererHeight - 1 && position.Y > Globals.MapRendererHeight - 1) return false;
+        if (originRenderer._rendererIndex.Y <= 0                              && position.Y < 0) return false;
+        if (originRenderer._rendererIndex.X >= Globals.GridRendererWidth - 1  && position.X > Globals.MapRendererWidth - 1) return false;
+        if (originRenderer._rendererIndex.X <= 0                              && position.X < 0) return false;
 
         return true;
     }
 
     public static Vector2I NormalizePositionIfNotInAnyChunkBound(Renderer originRenderer, Vector2I position)
     {
-        if (originRenderer._rendererIndex.Y >= Globals.GridHeight - 1 && position.Y > Globals.MapChunkHeight - 1)
+        if (originRenderer._rendererIndex.Y >= Globals.GridRendererHeight - 1 && position.Y > Globals.MapRendererHeight - 1)
         {
-            position.Y = Globals.MapChunkHeight - 1;
+            position.Y = Globals.MapRendererHeight - 1;
         }
 
         if (originRenderer._rendererIndex.Y <= 0 && position.Y < 0)
@@ -187,9 +184,9 @@ public partial class RenderManager : Node
             position.Y = 0;
         }
 
-        if (originRenderer._rendererIndex.X >= Globals.GridWidth - 1 && position.X > Globals.MapChunkWidth - 1)
+        if (originRenderer._rendererIndex.X >= Globals.GridRendererWidth - 1 && position.X > Globals.MapRendererWidth - 1)
         {
-            position.X = Globals.MapChunkWidth - 1;
+            position.X = Globals.MapRendererWidth - 1;
         }
 
         if (originRenderer._rendererIndex.X <= 0 && position.X < 0)

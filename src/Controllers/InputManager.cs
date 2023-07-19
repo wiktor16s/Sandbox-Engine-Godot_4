@@ -47,17 +47,17 @@ public static class InputManager
 
     public static bool MouseInChunksBounds(Vector2I mousePosition)
     {
-        return mousePosition.X >= 0                                                                 &&
-               mousePosition.X <= Globals.MapChunkWidth * Globals.GridWidth * Globals.RendererScale &&
-               mousePosition.Y >= 0                                                                 &&
-               mousePosition.Y <= Globals.MapChunkHeight * Globals.GridHeight * Globals.RendererScale;
+        return mousePosition.X >= 0                                                                            &&
+               mousePosition.X <= Globals.MapRendererWidth * Globals.GridRendererWidth * Globals.RendererScale &&
+               mousePosition.Y >= 0                                                                            &&
+               mousePosition.Y <= Globals.MapRendererHeight * Globals.GridRendererHeight * Globals.RendererScale;
     }
 
     public static Vector2I ConvertGlobalToRendererPosition(Vector2I globalPosition, Renderer renderer)
     {
         return new Vector2I(
-            globalPosition.X / Globals.RendererScale - renderer._rendererIndex.X * Globals.MapChunkWidth,
-            globalPosition.Y / Globals.RendererScale - renderer._rendererIndex.Y * Globals.MapChunkHeight
+            globalPosition.X / Globals.RendererScale - renderer._rendererIndex.X * Globals.MapRendererWidth,
+            globalPosition.Y / Globals.RendererScale - renderer._rendererIndex.Y * Globals.MapRendererHeight
         );
     }
 }
