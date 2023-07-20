@@ -3,20 +3,21 @@ using Godot;
 using SandboxEngine.Controllers;
 using SandboxEngine.Elements;
 using SandboxEngine.Map;
+using SandboxEngine.Utils;
 
 namespace SandboxEngine;
 
 public partial class Renderer : Sprite2D
 {
     private Cell[][]     _chunkOfCells; //[ChunkId][Cell]
-    public  Cell[]       _mapBuffer;    // array of cells todo move to self controller (performance impact)
-    public  Image        _mapImage;     // blob of image data
-    public  ImageTexture _mapTexture;   // texture of image data
-
-    public Vector2I _rendererIndex;
-    public bool     IsActive           = true;
-    public bool     LocalTickOscilator = true;
-    public Vector2I Position;
+    public  ChunkState   _chunkState = new(true, true, true, true);
+    public  Cell[]       _mapBuffer;  // array of cells todo move to self controller (performance impact)
+    public  Image        _mapImage;   // blob of image data
+    public  ImageTexture _mapTexture; // texture of image data
+    public  Vector2I     _rendererIndex;
+    public  bool         IsActive           = false;
+    public  bool         LocalTickOscilator = true;
+    public  Vector2I     Position;
 
     private void LoadMapBufferFromTexture()
     {
@@ -43,7 +44,7 @@ public partial class Renderer : Sprite2D
 
     public void DivideMapBufferIntoChunks()
     {
-        _chunkOfCells = Utils.SplitCellArrayIntoSquareChunks(_mapBuffer);
+        _chunkOfCells = Tools.SplitCellArrayIntoSquareChunks(_mapBuffer);
     }
 
     public void DrawCell(Vector2I position, EMaterial material, bool fall = true)
@@ -127,7 +128,7 @@ public partial class Renderer : Sprite2D
     public void SetIsFallingOnPath(Vector2I pos1, Vector2I pos2)
     {
         //todo optimalize this for god sake...!
-        var path = Utils.GetShortestPathBetweenTwoCells(pos1, pos2, this);
+        var path = Tools.GetShortestPathBetweenTwoCells(pos1, pos2, this);
         foreach (var position in path)
         {
             var thisCellRenderer      = RenderManager.GetRendererByRelativePosition(position, this);
@@ -181,5 +182,40 @@ public partial class Renderer : Sprite2D
         LocalTickOscilator = !LocalTickOscilator;
         _mapTexture.Update(_mapImage);
         Texture = _mapTexture;
+    }
+
+    public struct ChunkState
+    {
+        public bool isActiveChunk0;
+        public bool isActiveChunk1;
+        public bool isActiveChunk2;
+        public bool isActiveChunk3;
+
+        public ChunkState(bool ch0, bool ch1, bool ch2, bool ch3)
+        {
+            isActiveChunk0 = ch0;
+            isActiveChunk1 = ch1;
+            isActiveChunk2 = ch2;
+            isActiveChunk3 = ch3;
+        }
+
+        private void SetChunkState(int chunkId, bool state)
+        {
+            switch (chunkId)
+            {
+                case 0:
+                    isActiveChunk0 = state;
+                    break;
+                case 1:
+                    isActiveChunk1 = state;
+                    break;
+                case 2:
+                    isActiveChunk2 = state;
+                    break;
+                case 3:
+                    isActiveChunk3 = state;
+                    break;
+            }
+        }
     }
 }

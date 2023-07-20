@@ -1,5 +1,6 @@
 using System;
 using Godot;
+using SandboxEngine.Utils;
 
 namespace SandboxEngine.Scenes;
 
@@ -12,17 +13,17 @@ public partial class MapGenerator : Sprite2D
 
     public override void _Ready()
     {
-        Utils.Noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Perlin;
-        Utils.Noise.Seed      = Utils.GetRandomInt(0, int.MaxValue);
+        Tools.Noise.NoiseType = FastNoiseLite.NoiseTypeEnum.Perlin;
+        Tools.Noise.Seed      = Tools.GetRandomInt(0, int.MaxValue);
         Scale                 = new Vector2I(2, 2);
 
         _image = Image.Create(_mapWidth, _mapHeight, false, Image.Format.Rgba8);
 
         for (var x = 0; x < _mapWidth; x++)
         {
-            var noise  = Utils.Noise.GetNoise1D(_offset);
-            var yNoise = Utils.Noise.GetNoise1D(_offset) * _mapHeight / Utils.GetRandomInt(2, 3) + _mapHeight / 1.3f;
-            //var yNoise = Utils.MapValue(noise, -1, 1, _mapHeight / 2f, _mapHeight);
+            var noise  = Tools.Noise.GetNoise1D(_offset);
+            var yNoise = Tools.Noise.GetNoise1D(_offset) * _mapHeight / Tools.GetRandomInt(2, 3) + _mapHeight / 1.3f;
+            //var yNoise = Tools.MapValue(noise, -1, 1, _mapHeight / 2f, _mapHeight);
             var ySin   = Math.Sin(_offset);
             var height = yNoise;
             GD.Print(height);
@@ -35,7 +36,7 @@ public partial class MapGenerator : Sprite2D
             }
 
 
-            _offset += Utils.GetRandomFloat(0f, 1f);
+            _offset += Tools.GetRandomFloat(0f, 1f);
         }
 
         Texture = ImageTexture.CreateFromImage(_image);

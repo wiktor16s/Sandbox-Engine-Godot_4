@@ -2,9 +2,9 @@ using System;
 using Godot;
 using SandboxEngine.Map;
 
-namespace SandboxEngine;
+namespace SandboxEngine.Utils;
 
-public static class Utils
+public static class Tools
 {
     private static readonly Random        Generator = new();
     public static readonly  FastNoiseLite Noise     = new();
@@ -97,7 +97,8 @@ public static class Utils
         return (float)(Generator.NextDouble() * (max - min) + min);
     }
 
-    public static Vector2I[] GetShortestPathBetweenTwoCells(Vector2I pos1, Vector2I pos2, Renderer renderer)
+    public static Vector2I[]
+        GetShortestPathBetweenTwoCells(Vector2I pos1, Vector2I pos2, Renderer renderer)
     {
         var pos2ParentRenderer = renderer;
 

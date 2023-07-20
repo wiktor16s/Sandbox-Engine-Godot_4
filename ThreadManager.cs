@@ -1,15 +1,12 @@
-using System;
-using System.Diagnostics;
-using Godot;
+using SandboxEngine.Utils;
 
 namespace SandboxEngine;
 
 public static class ThreadManager
 {
-    public static int            ActualChunkIteration;
-    public static RenderThread[] RenderThreads = new RenderThread[Globals.GridTotalRenderers];
-    public static Stopwatch      Stopwatch     = new();
-    public static long           test;
+    public static           int            ActualChunkIteration;
+    public static           RenderThread[] RenderThreads = new RenderThread[Globals.GridTotalRenderers];
+    private static readonly FpsCounter     _fpsCounter   = new();
 
     public static void InitRenderThreads()
     {
@@ -17,52 +14,47 @@ public static class ThreadManager
         {
             RenderThreads[i] = new RenderThread(i);
             RenderThreads[i].WorkingThread.Start(i);
-            Stopwatch.Start();
+            _fpsCounter.Start();
         }
     }
 
     public static void ChunksIteration()
     {
-        test += 1;
-
-        for (var i = 0; i < Globals.GridTotalRenderers; i++)
-            if (RenderThreads[i].IsBusy)
+        foreach (var thread in RenderThreads)
+            if (thread.IsBusy)
                 return;
-        
+
         if (ActualChunkIteration > Globals.GridTotalRenderers - 1)
-        {
             ActualChunkIteration = -1;
-        }
         else
-        {
             ActualChunkIteration++;
-        }
+
 
         if (ActualChunkIteration == 0)
         {
-            for (var i = 0; i < Globals.GridTotalRenderers; i++)
+            _fpsCounter.GetFpsEveryXTime(10);
+            foreach (var thread in RenderThreads)
             {
-                RenderThreads[i].ShouldRenderTexture = false;
-                RenderThreads[i].StartTask();
+                thread.ShouldRenderTexture = false;
+                thread.Signal.Set();
             }
         }
+
         else if (ActualChunkIteration >= 0 && ActualChunkIteration <= Globals.AmountOfChunksInRenderer - 1)
         {
-            for (var i = 0; i < Globals.GridTotalRenderers; i++)
-                RenderThreads[i].StartTask();
+            foreach (var thread in RenderThreads)
+                thread.Signal.Set();
         }
 
         else if (ActualChunkIteration == -1)
         {
-            for (var i = 0; i < Globals.GridTotalRenderers; i++)
+            foreach (var rendererX in RenderManager.Renderers)
             {
-                RenderThreads[i].ShouldRenderTexture = true;
-                RenderThreads[i].StartTask();
+                foreach (var rendererY in rendererX)
+                {
+                    rendererY.UpdateTexture();
+                }
             }
-
-            if (test % 1000 == 0)
-                GD.Print(new TimeSpan(0, 0, 1) / Stopwatch.Elapsed);
-            Stopwatch.Restart();
         }
     }
 }

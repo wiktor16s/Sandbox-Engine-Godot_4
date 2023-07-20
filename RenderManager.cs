@@ -3,6 +3,7 @@ using Godot;
 using SandboxEngine.Controllers;
 using SandboxEngine.Elements;
 using SandboxEngine.Map;
+using SandboxEngine.Utils;
 
 namespace SandboxEngine;
 
@@ -133,19 +134,19 @@ public partial class RenderManager : Node
         {
             case EMaterial.SAND:
             {
-                return Utils.Darken(MaterialPool.Sand.Color, 150);
+                return Tools.Darken(MaterialPool.Sand.Color, 150);
             }
 
             case EMaterial.WATER:
             {
-                return Utils.Darken(MaterialPool.Water.Color, 50);
+                return Tools.Darken(MaterialPool.Water.Color, 50);
             }
 
             case EMaterial.OXYGEN:
-                return Utils.Darken(MaterialPool.Oxygen.Color, 15);
+                return Tools.Darken(MaterialPool.Oxygen.Color, 15);
 
             case EMaterial.STONE:
-                return Utils.Darken(MaterialPool.Stone.Color, 10);
+                return Tools.Darken(MaterialPool.Stone.Color, 10);
 
             case EMaterial.VACUUM:
                 return MaterialPool.Vacuum.Color;

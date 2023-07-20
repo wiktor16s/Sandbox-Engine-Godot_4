@@ -12,7 +12,7 @@ config_version=5
 
 config/name="Sandbox-Engine"
 run/main_scene="res://Scenes/MainScene.tscn"
-config/features=PackedStringArray("4.0", "C#", "Mobile")
+config/features=PackedStringArray("4.1", "C#", "Mobile")
 run/max_fps=60
 config/icon="res://icon.svg"
 
