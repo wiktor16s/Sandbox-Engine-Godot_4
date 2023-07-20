@@ -2,6 +2,7 @@ using System;
 using Godot;
 using SandboxEngine.Controllers;
 using SandboxEngine.Elements;
+using SandboxEngine.Utils;
 
 namespace SandboxEngine.Map;
 
@@ -128,6 +129,15 @@ public class Cell
         return true;
     }
 
+    public void CheckLimits()
+    {
+        // max speed for cell to not commit into another chunk rendered in the same time (multithreading race condition)
+        if (Velocity.Y > Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2))
+            Velocity.Y = Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2);
+
+        if (Velocity.X > Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2))
+            Velocity.X = Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2);
+    }
 
     public void ApplyGravity()
     {
@@ -167,14 +177,16 @@ public class Cell
     {
         if (!ShouldBeUpdated()) return;
         LastUpdatedInTick = ParentRenderer.LocalTickOscilator;
-        if (Utils.GetRandomFloat(0, 1) > 0.2f && GetElement().Substance == ESubstance.GAS) // skip ticks for gases
+        if (Tools.GetRandomFloat(0, 1) > 0.2f && GetElement().Substance == ESubstance.GAS) // skip ticks for gases
         {
             return;
         }
 
+        CheckLimits();
         ApplyGravity();
         ApplyAirResistance();
-        var path = Utils.GetShortestPathBetweenTwoCells(ConstPosition, ConstPosition + (Vector2I)Velocity, ParentRenderer);
+        var path = Tools.GetShortestPathBetweenTwoCells(ConstPosition, ConstPosition + (Vector2I)Velocity, ParentRenderer);
+        // todo optimize heap allocation Allocated size: 236.0 MB
 
         var finalPosition = ConstPosition;
 
@@ -216,7 +228,7 @@ public class Cell
 
             if (canMoveLeftDiagonal && canMoveRightDiagonal)
             {
-                finalPosition = Utils.GetRandomBool() ? leftDiagonal : rightDiagonal;
+                finalPosition = Tools.GetRandomBool() ? leftDiagonal : rightDiagonal;
             }
             else if (canMoveLeftDiagonal)
             {
@@ -234,7 +246,7 @@ public class Cell
                 var canMoveLeft  = true;
                 var canMoveRight = true;
 
-                for (var i = 0; i < Utils.GetRandomInt(1, (int)GetProperties().Flowability); i++)
+                for (var i = 0; i < Tools.GetRandomInt(1, (int)GetProperties().Flowability); i++)
                 {
                     if (canMoveLeft)
                     {
@@ -250,7 +262,7 @@ public class Cell
                 }
 
                 if (canMoveLeft && canMoveRight)
-                    finalPosition = Utils.GetRandomBool() ? left : right;
+                    finalPosition = Tools.GetRandomBool() ? left : right;
                 else if (canMoveLeft)
                     finalPosition                    = left;
                 else if (canMoveRight) finalPosition = right;

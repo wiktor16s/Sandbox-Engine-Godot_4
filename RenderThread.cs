@@ -4,27 +4,17 @@ namespace SandboxEngine;
 
 public class RenderThread
 {
-    public bool   IsBusy;
-    public bool   ShouldRenderTexture;
-    public int    ThreadId;
-    public Thread WorkingThread;
+    public bool           IsBusy = true;
+    public bool           ShouldRenderTexture;
+    public AutoResetEvent Signal = new(false);
+    public int            ThreadId;
+    public Thread         WorkingThread;
 
     public RenderThread(int threadId)
     {
         ThreadId            = threadId;
-        IsBusy              = true;
         ShouldRenderTexture = false;
         WorkingThread       = new Thread(_job);
-    }
-
-    public void StartTask()
-    {
-        IsBusy = true;
-    }
-
-    public void StopTask()
-    {
-        IsBusy = false;
     }
 
     private void _job(object obj)
@@ -33,19 +23,13 @@ public class RenderThread
         var renderer = RenderManager.GetRendererByIndex(ThreadId);
         while (true)
         {
-            if (IsBusy)
-            {
-                if (ShouldRenderTexture)
-                    renderer.UpdateTexture();
-                else
-                    renderer.ProcessChunk(ThreadManager.ActualChunkIteration);
-
-                StopTask();
-            }
+            if (ShouldRenderTexture)
+                renderer.UpdateTexture();
             else
-            {
-                Thread.Sleep(1);
-            }
+                renderer.ProcessChunk(ThreadManager.ActualChunkIteration);
+            IsBusy = false;
+            Signal.WaitOne();
+            IsBusy = true;
         }
     }
 }
