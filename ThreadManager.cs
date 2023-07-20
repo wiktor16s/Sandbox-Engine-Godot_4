@@ -48,10 +48,12 @@ public static class ThreadManager
 
         else if (ActualChunkIteration == -1)
         {
-            foreach (var thread in RenderThreads)
+            foreach (var rendererX in RenderManager.Renderers)
             {
-                thread.ShouldRenderTexture = true;
-                thread.Signal.Set();
+                foreach (var rendererY in rendererX)
+                {
+                    rendererY.UpdateTexture();
+                }
             }
         }
     }

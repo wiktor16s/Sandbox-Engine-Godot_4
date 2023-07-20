@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://bl4flr5tfxjfj"]
+[gd_scene load_steps=3 format=3 uid="uid://cwihoshgno63q"]
 
 [ext_resource type="Script" path="res://Renderer.cs" id="2_gycyu"]
 [ext_resource type="Texture2D" uid="uid://8tug4w1k3k2t" path="res://assets/Map/5.bmp" id="9_if8sb"]

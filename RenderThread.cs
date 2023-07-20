@@ -23,10 +23,7 @@ public class RenderThread
         var renderer = RenderManager.GetRendererByIndex(ThreadId);
         while (true)
         {
-            if (ShouldRenderTexture)
-                renderer.UpdateTexture();
-            else
-                renderer.ProcessChunk(ThreadManager.ActualChunkIteration);
+            renderer.ProcessChunk(ThreadManager.ActualChunkIteration);
             IsBusy = false;
             Signal.WaitOne();
             IsBusy = true;
