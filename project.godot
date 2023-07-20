@@ -11,8 +11,8 @@ config_version=5
 [application]
 
 config/name="Sandbox-Engine"
-run/main_scene="res://MainScene.tscn"
-config/features=PackedStringArray("4.0", "C#", "Mobile")
+run/main_scene="res://Scenes/MainScene.tscn"
+config/features=PackedStringArray("4.1", "C#", "Mobile")
 run/max_fps=60
 config/icon="res://icon.svg"
 
@@ -23,7 +23,7 @@ settings/stdout/print_fps=true
 [display]
 
 window/size/viewport_width=1024
-window/size/viewport_height=1920
+window/size/viewport_height=1024
 window/stretch/mode="viewport"
 window/vsync/vsync_mode=0
 

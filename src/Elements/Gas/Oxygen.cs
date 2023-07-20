@@ -9,7 +9,7 @@ public class Oxygen : Element
         EMaterial  material,
         Color      color,
         Properties properties
-    ) : base(material, ESubstance.FLUID, color, properties)
+    ) : base(material, ESubstance.GAS, color, properties)
     {
         // constructor
     }

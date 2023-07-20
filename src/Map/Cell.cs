@@ -2,6 +2,7 @@ using System;
 using Godot;
 using SandboxEngine.Controllers;
 using SandboxEngine.Elements;
+using SandboxEngine.Utils;
 
 namespace SandboxEngine.Map;
 
@@ -22,7 +23,7 @@ public class Cell
         ConstPosition     = new Vector2I(x, y);
         Temperature       = 0;
         Lifetime          = 0;
-        LastUpdatedInTick = Globals.TickOscillator;
+        LastUpdatedInTick = true;
         IsFalling         = false;
         ParentRenderer    = parentRenderer;
 
@@ -46,26 +47,30 @@ public class Cell
 
     public bool CheckIsTargetPositionIsOccupiable(Vector2I targetPosition)
     {
-        if (!ParentRenderer.InBounds(targetPosition)) return false;
-        var targetCell                           = ParentRenderer.GetCellFromMapBuffer(targetPosition);
+        var renderer = ParentRenderer;
+        var position = targetPosition;
+
+        if (!RenderManager.IsPositionInAnyChunkBound(ParentRenderer, position))
+        {
+            return false;
+        }
+
+        if (!ParentRenderer.InBounds(position))
+        {
+            renderer = RenderManager.GetRendererByRelativePosition(position, ParentRenderer);
+            position = RenderManager.GetOffsetOfRelativePosition(position);
+        }
+
+        var targetCell                           = renderer.GetCellFromMapBuffer(position);
         var isThisCellMoreDense                  = targetCell.GetProperties().Density < GetProperties().Density;
         var thisCellIsDiffMaterialThanTargetCell = targetCell.Material                != Material;
         return isThisCellMoreDense && thisCellIsDiffMaterialThanTargetCell;
     }
 
-    public bool CheckIsTargetIsOccupied(Vector2I targetPosition)
-    {
-        if (!ParentRenderer.InBounds(targetPosition)) return false;
-
-        var targetCell = ParentRenderer.GetCellFromMapBuffer(targetPosition);
-        return targetCell.Material != EMaterial.VACUUM; //todo fix for gases
-    }
-
 
     public void Update(float tickDeltaTime)
     {
-        if (LastUpdatedInTick == Globals.TickOscillator) return;
-
+        if (LastUpdatedInTick == ParentRenderer.LocalTickOscilator) return;
         switch (Material)
         {
             case EMaterial.SAND:
@@ -83,9 +88,9 @@ public class Cell
         }
     }
 
-    public void Swap(Vector2I destinationPosition, Renderer destinationRenderer)
+    public void Swap(Vector2I destinationPosition)
     {
-        var destinationCell       = destinationRenderer.GetCellFromMapBuffer(destinationPosition);
+        var destinationCell       = ParentRenderer.GetCellFromMapBuffer(destinationPosition);
         var tempMaterial          = Material;
         var tempLifetime          = Lifetime;
         var tempVelocity          = Velocity;
@@ -107,44 +112,10 @@ public class Cell
         destinationCell.LastUpdatedInTick = tempLastUpdatedInTick;
         destinationCell.IsFalling         = tempIsFalling;
 
-        SetIsFallingOnPath(ConstPosition, destinationCell.ConstPosition);
+        ParentRenderer.SetIsFallingOnPath(ConstPosition, destinationPosition);
 
-        ParentRenderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
-        ParentRenderer.DrawCell(ConstPosition,                 Material);                 // draw in new position
-    }
-
-    public void SetIsFallingOnPath(Vector2I pos1, Vector2I pos2)
-    {
-        //todo optimalize this for god sake...!
-        var path = Utils.GetShortestPathBetweenTwoCells(pos1, pos2, ParentRenderer);
-        foreach (var position in path)
-        {
-            SetIsFallingAroundPosition(pos1);
-            SetIsFallingAroundPosition(position);
-            SetIsFallingAroundPosition(pos2);
-        }
-    }
-
-    public void SetIsFallingInSpecificPosition(Vector2I position)
-    {
-        if (ParentRenderer.InBounds(position))
-        {
-            var cellUp = ParentRenderer.GetCellFromMapBuffer(position);
-            if (MaterialPool.GetByMaterial(cellUp.Material).Substance is not ESubstance.VACUUM) cellUp.IsFalling = true;
-        }
-    }
-
-    public void SetIsFallingAroundPosition(Vector2I position)
-    {
-        SetIsFallingInSpecificPosition(position + Vector2I.Up);
-        SetIsFallingInSpecificPosition(position + Vector2I.Down);
-        SetIsFallingInSpecificPosition(position + Vector2I.Left);
-        SetIsFallingInSpecificPosition(position + Vector2I.Right);
-
-        // SetIsFallingInSpecificPosition(position + Vector2I.Up + Vector2I.Right);
-        // SetIsFallingInSpecificPosition(position + Vector2I.Up + Vector2I.Left);
-        // SetIsFallingInSpecificPosition(position + Vector2I.Down + Vector2I.Right);
-        // SetIsFallingInSpecificPosition(position + Vector2I.Down + Vector2I.Left);
+        destinationCell.ParentRenderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
+        ParentRenderer.DrawCell(ConstPosition, Material);                                                 // draw in new position
     }
 
     private bool ShouldBeUpdated()
@@ -158,6 +129,15 @@ public class Cell
         return true;
     }
 
+    public void CheckLimits()
+    {
+        // max speed for cell to not commit into another chunk rendered in the same time (multithreading race condition)
+        if (Velocity.Y > Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2))
+            Velocity.Y = Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2);
+
+        if (Velocity.X > Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2))
+            Velocity.X = Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2);
+    }
 
     public void ApplyGravity()
     {
@@ -168,14 +148,21 @@ public class Cell
                 Velocity += Vector2.Down;
                 break;
             case ESubstance.GAS:
-                Velocity += Vector2.Up;
+                Velocity = Vector2I.Zero;
                 break;
         }
     }
 
     public void ApplyAirResistance()
     {
-        Velocity.X *= 0.3f;
+        if (GetElement().Substance == ESubstance.GAS)
+        {
+            Velocity.X = 0;
+        }
+        else
+        {
+            Velocity.X *= 0.3f;
+        }
     }
 
     public void HandleBounce()
@@ -189,18 +176,31 @@ public class Cell
     public void Move()
     {
         if (!ShouldBeUpdated()) return;
-        LastUpdatedInTick = Globals.TickOscillator;
+        LastUpdatedInTick = ParentRenderer.LocalTickOscilator;
+        if (Tools.GetRandomFloat(0, 1) > 0.2f && GetElement().Substance == ESubstance.GAS) // skip ticks for gases
+        {
+            return;
+        }
 
+        CheckLimits();
         ApplyGravity();
         ApplyAirResistance();
-        var path = Utils.GetShortestPathBetweenTwoCells(ConstPosition, ConstPosition + (Vector2I)Velocity, ParentRenderer);
+        var path = Tools.GetShortestPathBetweenTwoCells(ConstPosition, ConstPosition + (Vector2I)Velocity, ParentRenderer);
+        // todo optimize heap allocation Allocated size: 236.0 MB
 
         var finalPosition = ConstPosition;
 
         foreach (var pos in path)
-            if (CheckIsTargetPositionIsOccupiable(pos))
+        {
+            var fixedPosition = pos;
+            if (!RenderManager.IsPositionInAnyChunkBound(ParentRenderer, pos))
             {
-                finalPosition = pos;
+                fixedPosition = RenderManager.NormalizePositionIfNotInAnyChunkBound(ParentRenderer, pos);
+            }
+
+            if (CheckIsTargetPositionIsOccupiable(fixedPosition))
+            {
+                finalPosition = fixedPosition;
             }
             else
             {
@@ -208,6 +208,7 @@ public class Cell
                 HandleBounce();
                 break;
             }
+        }
 
 
         if (finalPosition == ConstPosition && IsFalling)
@@ -219,7 +220,7 @@ public class Cell
             var canMoveRightDiagonal = CheckIsTargetPositionIsOccupiable(rightDiagonal);
 
             if ((canMoveLeftDiagonal || canMoveRightDiagonal) && GD.Randf() > GetProperties().Flowability &&
-                CheckIsTargetIsOccupied(ConstPosition + Vector2I.Down)) // if down cell is occupied (cannot fall)
+                !CheckIsTargetPositionIsOccupiable(ConstPosition + Vector2I.Down)) // if down cell is occupied (cannot fall)
             {
                 canMoveLeftDiagonal  = false;
                 canMoveRightDiagonal = false;
@@ -227,7 +228,7 @@ public class Cell
 
             if (canMoveLeftDiagonal && canMoveRightDiagonal)
             {
-                finalPosition = Utils.GetRandomBool() ? leftDiagonal : rightDiagonal;
+                finalPosition = Tools.GetRandomBool() ? leftDiagonal : rightDiagonal;
             }
             else if (canMoveLeftDiagonal)
             {
@@ -240,50 +241,28 @@ public class Cell
             // todo Liquid flow
             else if (GetElement().Substance is ESubstance.FLUID or ESubstance.GAS)
             {
-                var left             = ConstPosition + Vector2I.Left;
-                var right            = ConstPosition + Vector2I.Right;
-                var canMoveLeft      = true;
-                var canMoveRight     = true;
-                var canFallLeftDown  = false;
-                var canFallRightDown = false;
+                var left         = ConstPosition + Vector2I.Left;
+                var right        = ConstPosition + Vector2I.Right;
+                var canMoveLeft  = true;
+                var canMoveRight = true;
 
-                for (var i = 0; i < (int)GetProperties().Flowability; i++)
+                for (var i = 0; i < Tools.GetRandomInt(1, (int)GetProperties().Flowability); i++)
                 {
-                    if (canFallLeftDown && canFallRightDown)
-                    {
-                        finalPosition = Utils.GetRandomBool() ? left + Vector2I.Down : right + Vector2I.Down;
-                        break;
-                    }
-
-                    if (canFallLeftDown)
-                    {
-                        finalPosition = left + Vector2I.Down;
-                        break;
-                    }
-
-                    if (canFallRightDown)
-                    {
-                        finalPosition = right + Vector2I.Down;
-                        break;
-                    }
-
                     if (canMoveLeft)
                     {
                         left.X      -= i;
                         canMoveLeft =  CheckIsTargetPositionIsOccupiable(left);
-                        if (canMoveLeft) canFallLeftDown = CheckIsTargetIsOccupied(left + Vector2I.Down);
                     }
 
                     if (canMoveRight)
                     {
                         right.X      += i;
                         canMoveRight =  CheckIsTargetPositionIsOccupiable(right);
-                        if (canMoveRight) canFallRightDown = CheckIsTargetIsOccupied(right + Vector2I.Down);
                     }
                 }
 
                 if (canMoveLeft && canMoveRight)
-                    finalPosition = Utils.GetRandomBool() ? left : right;
+                    finalPosition = Tools.GetRandomBool() ? left : right;
                 else if (canMoveLeft)
                     finalPosition                    = left;
                 else if (canMoveRight) finalPosition = right;
@@ -296,7 +275,7 @@ public class Cell
 
         if (finalPosition != ConstPosition)
         {
-            Swap(finalPosition, ParentRenderer); // todo
+            Swap(finalPosition);
         }
     }
 }

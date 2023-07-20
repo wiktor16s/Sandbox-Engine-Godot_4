@@ -34,12 +34,6 @@ public abstract class Element
     /// </summary>
     /// <param name="cell">Reference to affected cell</param>
     public abstract void Update(Cell cell);
-
-
-    public uint GetDefaultUintColor()
-    {
-        return Color.ToRgba32();
-    }
 }
 
 public enum EMaterial : short
