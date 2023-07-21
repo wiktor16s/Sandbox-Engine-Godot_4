@@ -1,4 +1,5 @@
 using System.Threading;
+using Godot;
 
 namespace SandboxEngine;
 
@@ -23,7 +24,15 @@ public class RenderThread
         var renderer = RenderManager.GetRendererByIndex(ThreadId);
         while (true)
         {
-            renderer.ProcessChunk(ThreadManager.ActualChunkIteration);
+            try
+            {
+                renderer.ProcessChunk(ThreadManager.ActualChunkIteration);
+            }
+            catch
+            {
+                GD.PrintErr(ThreadManager.ActualChunkIteration);
+            }
+
             IsBusy = false;
             Signal.WaitOne();
             IsBusy = true;

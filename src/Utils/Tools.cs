@@ -217,4 +217,9 @@ public static class Tools
             index / height
         );
     }
+
+    public static int ComputeIndex(Vector2I position, int size)
+    {
+        return position.Y * size + position.X;
+    }
 }

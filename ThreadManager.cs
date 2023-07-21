@@ -58,9 +58,3 @@ public static class ThreadManager
         }
     }
 }
-
-/*
- * if (test % 2000 == 0)
-                GD.Print(new TimeSpan(0, 0, 1) / Stopwatch.Elapsed);
-            Stopwatch.Restart();
-*/

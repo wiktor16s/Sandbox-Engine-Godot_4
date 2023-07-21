@@ -1,21 +1,42 @@
 using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using Godot;
 using SandboxEngine.Controllers;
 using SandboxEngine.Elements;
 using SandboxEngine.Map;
 using SandboxEngine.Utils;
+using Environment = System.Environment;
 
 namespace SandboxEngine;
 
 public partial class RenderManager : Node
 {
-    public static readonly Renderer[][] Renderers     = new Renderer[Globals.GridRendererWidth][];
-    public static          Cell[][]     AllChunksById = new Cell[Globals.AmountOfChunksInRenderer][];
+    public static readonly Renderer[][]    Renderers                = new Renderer[Globals.GridRendererWidth][];
+    public static          Cell[][]        ChunksOfCells            = new Cell[Globals.AmountOfChunksInRenderer][];
+    public static          Cell[][][]      ChunksOfRenderersOfCells = new Cell[Globals.AmountOfChunksInRenderer][][];
+    public static          ParallelOptions _parallelOptions         = new() { MaxDegreeOfParallelism = Environment.ProcessorCount };
+
 
     public override void _Ready()
     {
         CreateRenderers();
+        //SplitCellsToChunks();
         ThreadManager.InitRenderThreads();
+        InitChunksOfRenderersOfCells();
+        SplitCellsToRenderersInChunks();
+    }
+
+    public static void InitChunksOfRenderersOfCells()
+    {
+        for (var chunk_index = 0; chunk_index < Globals.AmountOfChunksInRenderer; chunk_index++)
+        {
+            ChunksOfRenderersOfCells[chunk_index] = new Cell[Globals.GridRendererWidth * Globals.GridRendererHeight][];
+            for (var renderer_index = 0; renderer_index < Globals.GridRendererWidth * Globals.GridRendererHeight; renderer_index++)
+            {
+                ChunksOfRenderersOfCells[chunk_index][renderer_index] = new Cell[Globals.MapRendererWidth / 2];
+            }
+        }
     }
 
 
@@ -36,13 +57,56 @@ public partial class RenderManager : Node
                 renderer.GlobalPosition = renderer.Position;
                 GD.Print($"x: {renderer.Position.X} y: {renderer.Position.Y}");
 
-                renderer.Texture = ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{GetChildren().Count}.bmp"));
-                renderer.Scale   = new Vector2I(Globals.RendererScale, Globals.RendererScale);
-                renderer.Name    = $"Renderer_{ComputeIndex(x, y)}";
-                Renderers[x][y]  = renderer;
+                var testId    = Tools.GetRandomBool() ? 0 : 3;
+                var textureId = GetChildren().Count < 16 ? GetChildren().Count : 0;
+
+                renderer.Texture =
+                    ImageTexture.CreateFromImage(Image.LoadFromFile($"res://assets/Map/{testId}.bmp"));
+                renderer.Scale  = new Vector2I(Globals.RendererScale, Globals.RendererScale);
+                renderer.Name   = $"Renderer_{ComputeIndex(x, y)}";
+                Renderers[x][y] = renderer;
                 AddChild(renderer);
             }
         }
+    }
+
+    public static void SplitCellsToRenderersInChunks()
+    {
+        foreach (var rendererX in Renderers)
+        {
+            foreach (var rendererY in rendererX)
+            {
+                GD.Print($"Computed: {Tools.ComputeIndex(rendererY._rendererIndex, Globals.GridRendererWidth)} -- Index: {rendererY._rendererIndex}");
+                ChunksOfRenderersOfCells[0][Tools.ComputeIndex(rendererY._rendererIndex, Globals.GridRendererWidth)] = rendererY.GetSpecificChunkOfCells(0);
+                ChunksOfRenderersOfCells[1][Tools.ComputeIndex(rendererY._rendererIndex, Globals.GridRendererWidth)] = rendererY.GetSpecificChunkOfCells(1);
+                ChunksOfRenderersOfCells[2][Tools.ComputeIndex(rendererY._rendererIndex, Globals.GridRendererWidth)] = rendererY.GetSpecificChunkOfCells(2);
+                ChunksOfRenderersOfCells[3][Tools.ComputeIndex(rendererY._rendererIndex, Globals.GridRendererWidth)] = rendererY.GetSpecificChunkOfCells(3);
+            }
+        }
+    }
+
+    public static void SplitCellsToChunks()
+    {
+        var chunk0Cells = new List<Cell>();
+        var chunk1Cells = new List<Cell>();
+        var chunk2Cells = new List<Cell>();
+        var chunk3Cells = new List<Cell>();
+
+        foreach (var rendererX in Renderers)
+        {
+            foreach (var rendererY in rendererX)
+            {
+                chunk0Cells.AddRange(rendererY.GetSpecificChunkOfCells(0));
+                chunk1Cells.AddRange(rendererY.GetSpecificChunkOfCells(1));
+                chunk2Cells.AddRange(rendererY.GetSpecificChunkOfCells(2));
+                chunk3Cells.AddRange(rendererY.GetSpecificChunkOfCells(3));
+            }
+        }
+
+        ChunksOfCells[0] = chunk0Cells.ToArray();
+        ChunksOfCells[1] = chunk1Cells.ToArray();
+        ChunksOfCells[2] = chunk2Cells.ToArray();
+        ChunksOfCells[3] = chunk3Cells.ToArray();
     }
 
     public override void _Process(double delta)
@@ -50,6 +114,34 @@ public partial class RenderManager : Node
         InputManager.UpdateMouseButtons(GetViewport());
         InputManager.UpdateKeyboard();
         ThreadManager.ChunksIteration();
+
+        // foreach (var chunk in ChunksOfRenderersOfCells)
+        // {
+        //     if (chunk != null)
+        //     {
+        //         Parallel.ForEach(chunk, _parallelOptions, renderer =>
+        //         {
+        //             if (renderer != null)
+        //             {
+        //                 foreach (var cell in renderer)
+        //                 {
+        //                     if (cell != null)
+        //                     {
+        //                         cell.Update(delta);
+        //                     }
+        //                 }
+        //             }
+        //         });
+        //     }
+        // }
+
+        // foreach (var rendererX in Renderers)
+        // {
+        //     foreach (var rendererY in rendererX)
+        //     {
+        //         rendererY.UpdateTexture();
+        //     }
+        // }
     }
 
     public static int ComputeIndex(int x, int y)

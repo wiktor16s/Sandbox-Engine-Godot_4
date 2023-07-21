@@ -68,7 +68,7 @@ public class Cell
     }
 
 
-    public void Update(float tickDeltaTime)
+    public void Update(double tickDeltaTime)
     {
         if (LastUpdatedInTick == ParentRenderer.LocalTickOscilator) return;
         switch (Material)
@@ -132,11 +132,15 @@ public class Cell
     public void CheckLimits()
     {
         // max speed for cell to not commit into another chunk rendered in the same time (multithreading race condition)
-        if (Velocity.Y > Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2))
-            Velocity.Y = Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2);
+        // if (Velocity.Y > Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2))
+        //     Velocity.Y = Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2);
+        //
+        // if (Velocity.X > Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2))
+        //     Velocity.X = Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2);
+        //
 
-        if (Velocity.X > Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2))
-            Velocity.X = Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2);
+        if (Math.Abs(Velocity.Y) > 8) Velocity.Y = Velocity.Y > 0 ? 8 : -8;
+        if (Math.Abs(Velocity.X) > 8) Velocity.Y = Velocity.Y > 0 ? 8 : -8;
     }
 
     public void ApplyGravity()
@@ -246,7 +250,9 @@ public class Cell
                 var canMoveLeft  = true;
                 var canMoveRight = true;
 
-                for (var i = 0; i < Tools.GetRandomInt(1, (int)GetProperties().Flowability); i++)
+                var value = Tools.GetRandomInt(1, (int)GetProperties().Flowability);
+
+                for (var i = 0; i < value; i++)
                 {
                     if (canMoveLeft)
                     {
