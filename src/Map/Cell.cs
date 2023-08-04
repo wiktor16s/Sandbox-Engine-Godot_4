@@ -8,7 +8,8 @@ namespace SandboxEngine.Map;
 
 public class Cell
 {
-    public readonly Vector2I  ConstPosition;
+    public readonly int       _chunkId;
+    public readonly Vector2I  ConstPositionOnRenderer;
     public          bool      IsFalling;
     public          bool      LastUpdatedInTick;
     public          uint      Lifetime;
@@ -19,13 +20,14 @@ public class Cell
 
     public Cell(int x, int y, Renderer parentRenderer)
     {
-        Material          = EMaterial.VACUUM;
-        ConstPosition     = new Vector2I(x, y);
-        Temperature       = 0;
-        Lifetime          = 0;
-        LastUpdatedInTick = true;
-        IsFalling         = false;
-        ParentRenderer    = parentRenderer;
+        Material                = EMaterial.VACUUM;
+        ConstPositionOnRenderer = new Vector2I(x, y);
+        Temperature             = 0;
+        Lifetime                = 0;
+        LastUpdatedInTick       = true;
+        IsFalling               = false;
+        ParentRenderer          = parentRenderer;
+        _chunkId                = GetChunkId();
 
         // 🟦🟩🟨⬛️
     }
@@ -43,6 +45,13 @@ public class Cell
     public Element GetElement()
     {
         return MaterialPool.GetByMaterial(Material);
+    }
+
+    private int GetChunkId()
+    {
+        return Tools.ComputeIndex(
+            new Vector2I(ConstPositionOnRenderer.X < Globals.MapRendererWidth / 2 ? 0 : 1, ConstPositionOnRenderer.Y < Globals.MapRendererHeight / 2 ? 0 : 1),
+            2);
     }
 
     public bool CheckIsTargetPositionIsOccupiable(Vector2I targetPosition)
@@ -112,10 +121,10 @@ public class Cell
         destinationCell.LastUpdatedInTick = tempLastUpdatedInTick;
         destinationCell.IsFalling         = tempIsFalling;
 
-        ParentRenderer.SetIsFallingOnPath(ConstPosition, destinationPosition);
+        ParentRenderer.SetIsFallingOnPath(ConstPositionOnRenderer, destinationPosition);
 
-        destinationCell.ParentRenderer.DrawCell(destinationCell.ConstPosition, destinationCell.Material); // draw in new position
-        ParentRenderer.DrawCell(ConstPosition, Material);                                                 // draw in new position
+        destinationCell.ParentRenderer.DrawCell(destinationCell.ConstPositionOnRenderer, destinationCell.Material); // draw in new position
+        ParentRenderer.DrawCell(ConstPositionOnRenderer, Material);                                                 // draw in new position
     }
 
     private bool ShouldBeUpdated()
@@ -131,16 +140,8 @@ public class Cell
 
     public void CheckLimits()
     {
-        // max speed for cell to not commit into another chunk rendered in the same time (multithreading race condition)
-        // if (Velocity.Y > Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2))
-        //     Velocity.Y = Globals.MapRendererHeight / (Globals.AmountOfChunksInRenderer / 2);
-        //
-        // if (Velocity.X > Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2))
-        //     Velocity.X = Globals.MapRendererWidth / (Globals.AmountOfChunksInRenderer / 2);
-        //
-
-        if (Math.Abs(Velocity.Y) > 8) Velocity.Y = Velocity.Y > 0 ? 8 : -8;
-        if (Math.Abs(Velocity.X) > 8) Velocity.Y = Velocity.Y > 0 ? 8 : -8;
+        if (Math.Abs(Velocity.X) > Globals.MaxVelocity) Velocity.X = Velocity.X > 0 ? Globals.MaxVelocity : -Globals.MaxVelocity;
+        if (Math.Abs(Velocity.Y) > Globals.MaxVelocity) Velocity.Y = Velocity.Y > 0 ? Globals.MaxVelocity : -Globals.MaxVelocity;
     }
 
     public void ApplyGravity()
@@ -189,10 +190,10 @@ public class Cell
         CheckLimits();
         ApplyGravity();
         ApplyAirResistance();
-        var path = Tools.GetShortestPathBetweenTwoCells(ConstPosition, ConstPosition + (Vector2I)Velocity, ParentRenderer);
+        var path = Tools.GetShortestPathBetweenTwoCells(ConstPositionOnRenderer, ConstPositionOnRenderer + (Vector2I)Velocity, ParentRenderer);
         // todo optimize heap allocation Allocated size: 236.0 MB
 
-        var finalPosition = ConstPosition;
+        var finalPosition = ConstPositionOnRenderer;
 
         foreach (var pos in path)
         {
@@ -215,16 +216,16 @@ public class Cell
         }
 
 
-        if (finalPosition == ConstPosition && IsFalling)
+        if (finalPosition == ConstPositionOnRenderer && IsFalling)
         {
-            var leftDiagonal  = ConstPosition + new Vector2I(-1, 1);
-            var rightDiagonal = ConstPosition + new Vector2I(1,  1);
+            var leftDiagonal  = ConstPositionOnRenderer + new Vector2I(-1, 1);
+            var rightDiagonal = ConstPositionOnRenderer + new Vector2I(1,  1);
 
             var canMoveLeftDiagonal  = CheckIsTargetPositionIsOccupiable(leftDiagonal);
             var canMoveRightDiagonal = CheckIsTargetPositionIsOccupiable(rightDiagonal);
 
             if ((canMoveLeftDiagonal || canMoveRightDiagonal) && GD.Randf() > GetProperties().Flowability &&
-                !CheckIsTargetPositionIsOccupiable(ConstPosition + Vector2I.Down)) // if down cell is occupied (cannot fall)
+                !CheckIsTargetPositionIsOccupiable(ConstPositionOnRenderer + Vector2I.Down)) // if down cell is occupied (cannot fall)
             {
                 canMoveLeftDiagonal  = false;
                 canMoveRightDiagonal = false;
@@ -245,8 +246,8 @@ public class Cell
             // todo Liquid flow
             else if (GetElement().Substance is ESubstance.FLUID or ESubstance.GAS)
             {
-                var left         = ConstPosition + Vector2I.Left;
-                var right        = ConstPosition + Vector2I.Right;
+                var left         = ConstPositionOnRenderer + Vector2I.Left;
+                var right        = ConstPositionOnRenderer + Vector2I.Right;
                 var canMoveLeft  = true;
                 var canMoveRight = true;
 
@@ -279,7 +280,7 @@ public class Cell
             }
         }
 
-        if (finalPosition != ConstPosition)
+        if (finalPosition != ConstPositionOnRenderer)
         {
             Swap(finalPosition);
         }

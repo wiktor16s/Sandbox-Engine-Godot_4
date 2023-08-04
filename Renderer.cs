@@ -10,7 +10,7 @@ namespace SandboxEngine;
 public partial class Renderer : Sprite2D
 {
     private Cell[][]     _chunkOfCells; //[ChunkId][Cell]
-    public  ChunkState   _chunkState = new(true, true, true, true);
+    public  ChunkState   _chunkState;
     public  Cell[]       _mapBuffer;  // array of cells todo move to self controller (performance impact)
     public  Image        _mapImage;   // blob of image data
     public  ImageTexture _mapTexture; // texture of image data
@@ -62,6 +62,7 @@ public partial class Renderer : Sprite2D
         InitMapBuffer();
         LoadMapBufferFromTexture();
         DivideMapBufferIntoChunks();
+        _chunkState = new ChunkState(this);
     }
 
     public void CopyImageToMap(Image imageTexture, Renderer renderer)
@@ -147,6 +148,7 @@ public partial class Renderer : Sprite2D
             if (MaterialPool.GetByMaterial(cellUp.Material).Substance is not ESubstance.VACUUM)
             {
                 cellUp.IsFalling = true;
+                _chunkState.AwakeChunkStateInThisTick(cellUp._chunkId);
             }
         }
     }
@@ -164,18 +166,25 @@ public partial class Renderer : Sprite2D
         // SetIsFallingInSpecificPosition(position + Vector2I.Down + Vector2I.Left);
     }
 
-    public void ProcessChunk(int chunkIndex)
-    {
-        for (var i = 0; i < Globals.MapRendererHeight / Globals.AmountOfChunksInRenderer * 2; i++)
-            if (i % 2 == 0)
-                for (var j = 0; j < Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2; j++)
-                    _chunkOfCells[chunkIndex][i * Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 + j].Update(0f);
-
-
-            else
-                for (var j = Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 - 1; j >= 0; j--)
-                    _chunkOfCells[chunkIndex][i * Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 + j].Update(0f);
-    }
+    // public void ProcessChunk(int chunkIndex)
+    // {
+    //     if (!_chunkState.GetNext(chunkIndex))
+    //     {
+    //         GD.Print($"Skipped chunk {chunkIndex}");
+    //         return;
+    //     }
+    //
+    //     for (var i = 0; i < Globals.MapRendererHeight / Globals.AmountOfChunksInRenderer * 2; i++)
+    //         if (i % 2 == 0)
+    //             for (var j = 0; j < Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2; j++)
+    //                 _chunkOfCells[chunkIndex][i * Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 + j].Update(0f);
+    //
+    //
+    //         else
+    //             for (var j = Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 - 1; j >= 0; j--)
+    //                 _chunkOfCells[chunkIndex][i * Globals.MapRendererWidth / Globals.AmountOfChunksInRenderer * 2 + j].Update(0f);
+    //     _chunkState.SubmitChunkStateInThisTick();
+    // }
 
     public void UpdateTexture()
     {
@@ -184,36 +193,76 @@ public partial class Renderer : Sprite2D
         Texture = _mapTexture;
     }
 
+
     public struct ChunkState
     {
-        public bool isActiveChunk0;
-        public bool isActiveChunk1;
-        public bool isActiveChunk2;
-        public bool isActiveChunk3;
+        public Renderer _parentRenderer;
+        public bool     nextRenderStateCH0;
+        public bool     nextRenderStateCH1;
+        public bool     nextRenderStateCH2;
+        public bool     nextRenderStateCH3;
 
-        public ChunkState(bool ch0, bool ch1, bool ch2, bool ch3)
+        public bool actualRenderStateCH0;
+        public bool actualRenderStateCH1;
+        public bool actualRenderStateCH2;
+        public bool actualRenderStateCH3;
+
+        public ChunkState(Renderer parentRenderer)
         {
-            isActiveChunk0 = ch0;
-            isActiveChunk1 = ch1;
-            isActiveChunk2 = ch2;
-            isActiveChunk3 = ch3;
+            _parentRenderer    = parentRenderer;
+            nextRenderStateCH0 = false;
+            nextRenderStateCH1 = false;
+            nextRenderStateCH2 = false;
+            nextRenderStateCH3 = false;
+
+            actualRenderStateCH0 = false;
+            actualRenderStateCH1 = false;
+            actualRenderStateCH2 = false;
+            actualRenderStateCH3 = false;
         }
 
-        private void SetChunkState(int chunkId, bool state)
+        public bool GetNext(int chunkId)
+        {
+            GD.Print("Get next");
+            if (chunkId == 0) return nextRenderStateCH0;
+            if (chunkId == 1) return nextRenderStateCH1;
+            if (chunkId == 2) return nextRenderStateCH2;
+            if (chunkId == 3) return nextRenderStateCH3;
+            throw new Exception("Cannot get chunk state from chunk id that is out of range");
+        }
+
+        public void SubmitChunkStateInThisTick()
+        {
+            nextRenderStateCH0   = actualRenderStateCH0;
+            actualRenderStateCH0 = false;
+            nextRenderStateCH1   = actualRenderStateCH1;
+            actualRenderStateCH1 = false;
+            nextRenderStateCH2   = actualRenderStateCH2;
+            actualRenderStateCH2 = false;
+            nextRenderStateCH3   = actualRenderStateCH3;
+            actualRenderStateCH3 = false;
+            // GD.Print($"R:{_parentRenderer._rendererIndex} 0: {nextRenderStateCH0} 1: {nextRenderStateCH1} 2: {nextRenderStateCH2} 3: {nextRenderStateCH3}");
+        }
+
+        public void AwakeChunkStateInThisTick(int chunkId)
         {
             switch (chunkId)
             {
                 case 0:
-                    isActiveChunk0 = state;
+                    if (!actualRenderStateCH0)
+                        actualRenderStateCH0 = true;
                     break;
                 case 1:
-                    isActiveChunk1 = state;
+                    if (!actualRenderStateCH1)
+                        actualRenderStateCH1 = true;
                     break;
                 case 2:
-                    isActiveChunk2 = state;
+                    if (!actualRenderStateCH2)
+                        actualRenderStateCH2 = true;
                     break;
                 case 3:
-                    isActiveChunk3 = state;
+                    if (!actualRenderStateCH3)
+                        actualRenderStateCH3 = true;
                     break;
             }
         }

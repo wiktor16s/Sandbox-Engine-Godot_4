@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Godot;
 using SandboxEngine.Controllers;
@@ -21,8 +20,6 @@ public partial class RenderManager : Node
     public override void _Ready()
     {
         CreateRenderers();
-        //SplitCellsToChunks();
-        ThreadManager.InitRenderThreads();
         InitChunksOfRenderersOfCells();
         SplitCellsToRenderersInChunks();
     }
@@ -57,7 +54,7 @@ public partial class RenderManager : Node
                 renderer.GlobalPosition = renderer.Position;
                 GD.Print($"x: {renderer.Position.X} y: {renderer.Position.Y}");
 
-                var testId    = Tools.GetRandomBool() ? 0 : 3;
+                var testId    = Tools.GetRandomBool() ? 0 : 0;
                 var textureId = GetChildren().Count < 16 ? GetChildren().Count : 0;
 
                 renderer.Texture =
@@ -85,63 +82,39 @@ public partial class RenderManager : Node
         }
     }
 
-    public static void SplitCellsToChunks()
+    public override void _Process(double delta)
     {
-        var chunk0Cells = new List<Cell>();
-        var chunk1Cells = new List<Cell>();
-        var chunk2Cells = new List<Cell>();
-        var chunk3Cells = new List<Cell>();
+        InputManager.UpdateMouseButtons(GetViewport());
+        InputManager.UpdateKeyboard();
+        // ThreadManager.ChunksIteration();
+
+        foreach (var chunk in ChunksOfRenderersOfCells)
+        {
+            if (chunk != null)
+            {
+                Parallel.ForEach(chunk, _parallelOptions, renderer =>
+                {
+                    if (renderer != null)
+                    {
+                        foreach (var cell in renderer)
+                        {
+                            if (cell != null)
+                            {
+                                cell.Update(delta);
+                            }
+                        }
+                    }
+                });
+            }
+        }
 
         foreach (var rendererX in Renderers)
         {
             foreach (var rendererY in rendererX)
             {
-                chunk0Cells.AddRange(rendererY.GetSpecificChunkOfCells(0));
-                chunk1Cells.AddRange(rendererY.GetSpecificChunkOfCells(1));
-                chunk2Cells.AddRange(rendererY.GetSpecificChunkOfCells(2));
-                chunk3Cells.AddRange(rendererY.GetSpecificChunkOfCells(3));
+                rendererY.UpdateTexture();
             }
         }
-
-        ChunksOfCells[0] = chunk0Cells.ToArray();
-        ChunksOfCells[1] = chunk1Cells.ToArray();
-        ChunksOfCells[2] = chunk2Cells.ToArray();
-        ChunksOfCells[3] = chunk3Cells.ToArray();
-    }
-
-    public override void _Process(double delta)
-    {
-        InputManager.UpdateMouseButtons(GetViewport());
-        InputManager.UpdateKeyboard();
-        ThreadManager.ChunksIteration();
-
-        // foreach (var chunk in ChunksOfRenderersOfCells)
-        // {
-        //     if (chunk != null)
-        //     {
-        //         Parallel.ForEach(chunk, _parallelOptions, renderer =>
-        //         {
-        //             if (renderer != null)
-        //             {
-        //                 foreach (var cell in renderer)
-        //                 {
-        //                     if (cell != null)
-        //                     {
-        //                         cell.Update(delta);
-        //                     }
-        //                 }
-        //             }
-        //         });
-        //     }
-        // }
-
-        // foreach (var rendererX in Renderers)
-        // {
-        //     foreach (var rendererY in rendererX)
-        //     {
-        //         rendererY.UpdateTexture();
-        //     }
-        // }
     }
 
     public static int ComputeIndex(int x, int y)
